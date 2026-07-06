@@ -58,6 +58,25 @@ h2{
   background:var(--green-soft);border-radius:99px;padding:2px 9px;
 }
 
+/* ---- quêtes micro ---- */
+.quests{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.quest{
+  border:1.5px solid var(--line);border-radius:11px;background:#fff;
+  padding:7px 4px 6px;text-align:center;cursor:pointer;
+  font-family:inherit;position:relative;
+}
+.quest .q-em{font-size:1.15rem;display:block;line-height:1.2}
+.quest .q-name{font-size:.64rem;font-weight:800;color:var(--ink-soft);display:block;margin:2px 0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.quest .q-bar{height:5px;background:var(--paper);border-radius:99px;overflow:hidden;margin:0 6px}
+.quest .q-bar i{display:block;height:100%;border-radius:99px;background:var(--amber)}
+.quest.done{border-color:#BFDCC2;background:#F2F9F1}
+.quest.done .q-name{color:var(--green)}
+.quest.done .q-bar i{background:var(--green)}
+.quest.done::after{
+  content:"✓";position:absolute;top:3px;right:5px;font-size:.7rem;font-weight:900;color:var(--green);
+}
+.quest.todo .q-em{filter:grayscale(1);opacity:.5}
+
 /* ---- grille quotidienne ---- */
 .day-row{
   display:flex;align-items:center;gap:8px;
@@ -191,7 +210,8 @@ nav button.active{color:var(--green)}
   position:fixed;left:50%;bottom:86px;transform:translateX(-50%) translateY(20px);
   background:var(--ink);color:#fff;padding:9px 16px;border-radius:99px;
   font-size:.82rem;font-weight:700;opacity:0;pointer-events:none;
-  transition:all .25s ease;z-index:20;white-space:nowrap;
+  transition:all .25s ease;z-index:20;
+  max-width:calc(100vw - 32px);width:max-content;text-align:center;line-height:1.45;
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 @media (prefers-reduced-motion: reduce){
@@ -209,6 +229,13 @@ nav button.active{color:var(--green)}
 <main>
   <!-- ================= VUE SEMAINE ================= -->
   <div class="view active" id="view-week">
+
+    <section class="card">
+      <span class="progress-pill" id="questPill"></span>
+      <h2>🎯 Quêtes de la semaine</h2>
+      <p class="sub">Couverture estimée en vitamines & minéraux — touchez une quête pour voir comment l'accomplir</p>
+      <div class="quests" id="questGrid"></div>
+    </section>
 
     <section class="card">
       <span class="progress-pill" id="dailyPill"></span>
@@ -229,6 +256,13 @@ nav button.active{color:var(--green)}
       <h2>Protéines de la semaine</h2>
       <p class="sub">Une pastille = un repas avec cette protéine.</p>
       <div id="proteinsPool"></div>
+    </section>
+
+    <section class="card">
+      <span class="progress-pill" id="microPill"></span>
+      <h2>Variété micro de la semaine</h2>
+      <p class="sub">Des catégories « bonus » qui font avancer les quêtes 🎯</p>
+      <div id="microPool"></div>
     </section>
 
     <section class="card">
@@ -278,6 +312,17 @@ nav button.active{color:var(--green)}
       <p class="hint">💡 Repère santé : légumineuses au moins 2 fois/semaine.</p>
     </section>
 
+    <section class="card">
+      <h2>Variété micro · objectifs de la semaine</h2>
+      <div id="setMicro"></div>
+      <div class="add-row">
+        <input class="i-em" id="addMicroEm" maxlength="4" placeholder="🫐">
+        <input class="i-name" id="addMicroName" maxlength="24" placeholder="Nouvelle catégorie…">
+        <button onclick="addItem('micro')">+</button>
+      </div>
+      <p class="hint">💡 Ces catégories couvrent les micronutriments : noix (oméga-3, vit. E, magnésium), légumes verts feuillus (folates, fer), colorés (vit. A), agrumes (vit. C), huile colza/olive (bons lipides), féculent en version complète (fibres, vit. B).</p>
+    </section>
+
     <section class="card danger-zone">
       <h2>Semaine en cours</h2>
       <p class="sub">Remettre tous les compteurs à zéro (sans toucher à l'historique)</p>
@@ -304,12 +349,15 @@ const DAILY_CATS = [
   {id:"dairy", emoji:"🥛", target:2},
 ];
 
+const GROUPS = { proteins:"proteinsPool", carbs:"carbsPool", micro:"microPool" };
+
 const DEFAULT_CONFIG = {
   proteins: [
-    {id:"poulet",  name:"Poulet / volaille", emoji:"🍗", count:4},
-    {id:"boeuf",   name:"Bœuf (viande rouge)", emoji:"🥩", count:2, cap:true},
-    {id:"oeufs",   name:"Œufs", emoji:"🥚", count:4},
-    {id:"poisson", name:"Poisson (dont 1 gras)", emoji:"🐟", count:3},
+    {id:"poulet",      name:"Poulet / volaille", emoji:"🍗", count:4},
+    {id:"boeuf",       name:"Bœuf (viande rouge)", emoji:"🥩", count:2, cap:true},
+    {id:"oeufs",       name:"Œufs", emoji:"🥚", count:4},
+    {id:"poissongras", name:"Poisson gras (sardine, maquereau, saumon…)", emoji:"🐟", count:1},
+    {id:"poisson",     name:"Poisson blanc / autre", emoji:"🐠", count:2},
   ],
   carbs: [
     {id:"riz",     name:"Riz", emoji:"🍚", count:4},
@@ -318,7 +366,31 @@ const DEFAULT_CONFIG = {
     {id:"pdt",     name:"Pommes de terre", emoji:"🥔", count:2},
     {id:"legum",   name:"Légumineuses", emoji:"🫘", count:3},
   ],
+  micro: [
+    {id:"noix",    name:"Poignée de noix / oléagineux", emoji:"🌰", count:4},
+    {id:"feuillu", name:"Légume vert feuillu", emoji:"🥬", count:3},
+    {id:"colore",  name:"Légume / fruit très coloré", emoji:"🍅", count:3},
+    {id:"agrume",  name:"Agrume ou kiwi", emoji:"🍊", count:3},
+    {id:"huile",   name:"Huile colza / noix / olive", emoji:"🫒", count:3},
+    {id:"complet", name:"Féculent version complète", emoji:"🌾", count:3},
+  ],
 };
+
+/* Quêtes : chaque micronutriment est couvert par des sources pondérées.
+   g = groupe ('daily' = grille quotidienne), need = fréquence hebdo visée, w = poids. */
+const QUESTS = [
+  {id:"vitd",  name:"Vit. D",    emoji:"☀️", srcs:[{g:"proteins",id:"poissongras",need:1,w:1}]},
+  {id:"o3",    name:"Oméga-3",   emoji:"🐟", srcs:[{g:"proteins",id:"poissongras",need:1,w:.5},{g:"micro",id:"noix",need:3,w:.25},{g:"micro",id:"huile",need:2,w:.25}]},
+  {id:"vitc",  name:"Vit. C",    emoji:"🍊", srcs:[{g:"micro",id:"agrume",need:3,w:.6},{g:"daily",id:"fruit",need:10,w:.4}]},
+  {id:"b9",    name:"Folates",   emoji:"🥬", srcs:[{g:"micro",id:"feuillu",need:3,w:.7},{g:"carbs",id:"legum",need:2,w:.3}]},
+  {id:"fer",   name:"Fer",       emoji:"🩸", srcs:[{g:"proteins",id:"__viande",need:3,w:.4},{g:"micro",id:"feuillu",need:3,w:.3},{g:"carbs",id:"legum",need:2,w:.3}]},
+  {id:"b12",   name:"Vit. B12",  emoji:"🥚", srcs:[{g:"proteins",id:"__animal",need:5,w:.7},{g:"daily",id:"dairy",need:8,w:.3}]},
+  {id:"ca",    name:"Calcium",   emoji:"🥛", srcs:[{g:"daily",id:"dairy",need:10,w:.8},{g:"micro",id:"feuillu",need:3,w:.2}]},
+  {id:"fibres",name:"Fibres",    emoji:"🌾", srcs:[{g:"daily",id:"vegfruit",need:25,w:.5},{g:"micro",id:"complet",need:3,w:.3},{g:"carbs",id:"legum",need:2,w:.2}]},
+  {id:"mg",    name:"Magnésium", emoji:"🌰", srcs:[{g:"micro",id:"noix",need:4,w:.5},{g:"micro",id:"complet",need:3,w:.3},{g:"carbs",id:"legum",need:2,w:.2}]},
+  {id:"vita",  name:"Vit. A",    emoji:"🥕", srcs:[{g:"micro",id:"colore",need:3,w:.7},{g:"daily",id:"veg",need:15,w:.3}]},
+  {id:"vite",  name:"Vit. E",    emoji:"🫒", srcs:[{g:"micro",id:"noix",need:4,w:.6},{g:"micro",id:"huile",need:3,w:.4}]},
+];
 
 // ---------- dates ----------
 function mondayOf(d){
@@ -345,10 +417,37 @@ function freshWeek(config){
   for (let i=0;i<7;i++){
     daily[i] = {veg:0, fruit:0, dairy:0};
   }
-  const pools = {proteins:{}, carbs:{}};
-  for (const g of ["proteins","carbs"])
+  const pools = {};
+  for (const g of Object.keys(GROUPS)){
+    pools[g] = {};
     for (const it of config[g]) pools[g][it.id] = 0;
+  }
   return { key: weekKey(new Date()), daily, pools };
+}
+
+/* Quantité consommée pour une source de quête */
+function srcDone(week, src){
+  if (src.g === "daily"){
+    let sum = 0;
+    for (let i=0;i<7;i++){
+      if (src.id === "vegfruit") sum += week.daily[i].veg + week.daily[i].fruit;
+      else sum += week.daily[i][src.id] || 0;
+    }
+    return sum;
+  }
+  const pools = week.pools[src.g] || {};
+  if (src.id === "__viande")
+    return (pools.poulet||0) + (pools.boeuf||0);
+  if (src.id === "__animal")
+    return (pools.poulet||0) + (pools.boeuf||0) + (pools.oeufs||0) + (pools.poisson||0) + (pools.poissongras||0);
+  return pools[src.id] || 0;
+}
+
+/* Couverture 0→1 d'une quête */
+function questProgress(week, q){
+  let p = 0;
+  for (const s of q.srcs) p += Math.min(1, srcDone(week, s) / s.need) * s.w;
+  return Math.min(1, p);
 }
 
 function computeStats(week, config){
@@ -357,14 +456,43 @@ function computeStats(week, config){
     for (const c of DAILY_CATS){ dDone += week.daily[i][c.id]; dTot += c.target; }
   const pool = g=>{
     let done=0, tot=0;
-    for (const it of config[g]){ done += Math.min(week.pools[g][it.id]||0, it.count); tot += it.count; }
+    for (const it of config[g]){ done += Math.min(week.pools[g]?.[it.id]||0, it.count); tot += it.count; }
     return {done, tot};
   };
-  const p = pool("proteins"), c = pool("carbs");
+  const questsDone = QUESTS.filter(q => questProgress(week, q) >= 1).length;
   return {
     daily:{done:dDone, tot:dTot},
-    proteins:p, carbs:c,
+    proteins: pool("proteins"),
+    carbs: pool("carbs"),
+    micro: pool("micro"),
+    quests:{done: questsDone, tot: QUESTS.length},
   };
+}
+
+function migrate(s){
+  // v1 → v2 : ajout du groupe micro + scission du poisson
+  if (!s.config.micro){
+    s.config.micro = structuredClone(DEFAULT_CONFIG.micro);
+  }
+  const pIdx = s.config.proteins.findIndex(x=>x.id==="poisson" && !s.config.proteins.some(y=>y.id==="poissongras"));
+  if (pIdx !== -1){
+    const old = s.config.proteins[pIdx];
+    s.config.proteins.splice(pIdx, 1,
+      {id:"poissongras", name:"Poisson gras (sardine, maquereau, saumon…)", emoji:"🐟", count:1},
+      {id:"poisson",     name:"Poisson blanc / autre", emoji:"🐠", count:Math.max(0,(old.count||3)-1)}
+    );
+    const done = s.week?.pools?.proteins?.poisson || 0;
+    if (s.week?.pools?.proteins){
+      s.week.pools.proteins.poissongras = done > 0 ? 1 : 0;
+      s.week.pools.proteins.poisson = Math.max(0, done - 1);
+    }
+  }
+  if (s.week){
+    if (!s.week.pools.micro) s.week.pools.micro = {};
+    for (const it of s.config.micro)
+      if (!(it.id in s.week.pools.micro)) s.week.pools.micro[it.id] = 0;
+  }
+  return s;
 }
 
 function load(){
@@ -374,6 +502,7 @@ function load(){
     s = { config: structuredClone(DEFAULT_CONFIG), week: null, history: [] };
     s.week = freshWeek(s.config);
   }
+  s = migrate(s);
   // nouvelle semaine ? → archiver l'ancienne
   const nowKey = weekKey(new Date());
   if (s.week.key !== nowKey){
@@ -427,12 +556,40 @@ function renderPool(group, elId){
   el.innerHTML = html || `<p class="empty">Aucun aliment configuré — ajoutez-en dans Réglages.</p>`;
 }
 
+function questHint(q){
+  const nameOf = s => {
+    if (s.g === "daily"){
+      return {veg:"légumes (grille quotidienne)", fruit:"fruits (grille quotidienne)",
+              dairy:"produits laitiers (grille quotidienne)", vegfruit:"fruits & légumes (grille quotidienne)"}[s.id];
+    }
+    if (s.id === "__viande") return "viande (poulet + bœuf)";
+    if (s.id === "__animal") return "protéine animale (au choix)";
+    const it = (state.config[s.g]||[]).find(x=>x.id===s.id);
+    return it ? `${it.emoji} ${it.name.toLowerCase()}` : s.id;
+  };
+  return q.name + " → " + q.srcs.map(s=>`${s.need}× ${nameOf(s)}`).join(" + ");
+}
+
+function renderQuests(){
+  const grid = document.getElementById("questGrid");
+  grid.innerHTML = QUESTS.map((q,i)=>{
+    const p = questProgress(state.week, q);
+    const cls = p >= 1 ? "done" : (p > 0 ? "part" : "todo");
+    return `<button class="quest ${cls}" onclick="toast(questHint(QUESTS[${i}]))" aria-label="${q.name}">
+      <span class="q-em">${q.emoji}</span>
+      <span class="q-name">${q.name}</span>
+      <span class="q-bar"><i style="width:${Math.round(p*100)}%"></i></span>
+    </button>`;
+  }).join("");
+}
+
 function renderPills(){
   const s = computeStats(state.week, state.config);
-  const pct = o => o.tot ? Math.round(100*o.done/o.tot) : 0;
   document.getElementById("dailyPill").textContent    = `${s.daily.done}/${s.daily.tot}`;
   document.getElementById("carbsPill").textContent    = `${s.carbs.done}/${s.carbs.tot}`;
   document.getElementById("proteinsPill").textContent = `${s.proteins.done}/${s.proteins.tot}`;
+  document.getElementById("microPill").textContent    = `${s.micro.done}/${s.micro.tot}`;
+  document.getElementById("questPill").textContent    = `${s.quests.done}/${s.quests.tot} ✓`;
 }
 
 function renderHistory(){
@@ -443,11 +600,14 @@ function renderHistory(){
   }
   const pct = o => o.tot ? Math.round(100*o.done/o.tot) : 0;
   el.innerHTML = state.history.map(h=>{
-    const rows = [
+    const cats = [
       ["Quotidien 🥕🍎🥛", h.stats.daily],
       ["Féculents", h.stats.carbs],
       ["Protéines", h.stats.proteins],
-    ].map(([label,o])=>`
+    ];
+    if (h.stats.micro)  cats.push(["Variété micro", h.stats.micro]);
+    if (h.stats.quests) cats.push(["Quêtes 🎯", h.stats.quests]);
+    const rows = cats.map(([label,o])=>`
       <div class="bar-row"><span class="b-label">${label}</span>
       <span class="bar"><i style="width:${pct(o)}%"></i></span>
       <span class="b-val">${pct(o)}%</span></div>`).join("");
@@ -456,7 +616,7 @@ function renderHistory(){
 }
 
 function renderSettings(){
-  for (const [group, elId] of [["proteins","setProteins"],["carbs","setCarbs"]]){
+  for (const [group, elId] of [["proteins","setProteins"],["carbs","setCarbs"],["micro","setMicro"]]){
     const el = document.getElementById(elId);
     el.innerHTML = state.config[group].map((it,idx)=>`
       <div class="set-row">
@@ -474,8 +634,9 @@ function renderSettings(){
 
 function renderAll(){
   document.getElementById("weekLabel").textContent = fmtWeek(state.week.key);
-  renderDaily(); renderPool("carbs","carbsPool"); renderPool("proteins","proteinsPool");
-  renderPills(); renderHistory(); renderSettings();
+  renderDaily();
+  for (const [g, elId] of Object.entries(GROUPS)) renderPool(g, elId);
+  renderQuests(); renderPills(); renderHistory(); renderSettings();
 }
 
 // ---------- interactions ----------
@@ -484,20 +645,20 @@ function tapDaily(dayIdx, cat){
   const cur = state.week.daily[dayIdx][cat];
   state.week.daily[dayIdx][cat] = cur >= target ? cur - 1 : cur + 1;
   // logique : tap = +1 tant que pas plein ; si plein, tap = -1 (annulation)
-  save(); renderDaily(); renderPills();
+  save(); renderDaily(); renderQuests(); renderPills();
 }
 function tapPool(group, id){
   const it = state.config[group].find(x=>x.id===id);
   const cur = state.week.pools[group][id] || 0;
   state.week.pools[group][id] = cur >= it.count ? cur - 1 : cur + 1;
-  save(); renderPool(group, group==="carbs"?"carbsPool":"proteinsPool"); renderPills();
+  save(); renderPool(group, GROUPS[group]); renderQuests(); renderPills();
 }
 function stepItem(group, idx, delta){
   const it = state.config[group][idx];
   it.count = Math.max(0, Math.min(14, it.count + delta));
   const done = state.week.pools[group][it.id] || 0;
   if (done > it.count) state.week.pools[group][it.id] = it.count;
-  save(); renderSettings(); renderPool(group, group==="carbs"?"carbsPool":"proteinsPool"); renderPills();
+  save(); renderSettings(); renderPool(group, GROUPS[group]); renderQuests(); renderPills();
 }
 function delItem(group, idx){
   const it = state.config[group][idx];
@@ -507,8 +668,9 @@ function delItem(group, idx){
   save(); renderAll();
 }
 function addItem(group){
-  const emEl = document.getElementById(group==="proteins"?"addProtEm":"addCarbEm");
-  const nameEl = document.getElementById(group==="proteins"?"addProtName":"addCarbName");
+  const ids = {proteins:["addProtEm","addProtName"], carbs:["addCarbEm","addCarbName"], micro:["addMicroEm","addMicroName"]};
+  const emEl = document.getElementById(ids[group][0]);
+  const nameEl = document.getElementById(ids[group][1]);
   const name = nameEl.value.trim();
   const emoji = emEl.value.trim() || "🍽️";
   if (!name){ toast("Donnez un nom à l'aliment"); return; }
