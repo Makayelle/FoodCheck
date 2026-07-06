@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2F7A3D">
+<title>Mon suivi nutrition</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F4F7F1;
+  --card:#FFFFFF;
+  --ink:#233120;
+  --ink-soft:#5C6B58;
+  --green:#2F7A3D;
+  --green-soft:#E3EFE2;
+  --marker:#D93636;
+  --amber:#C77B1E;
+  --line:#DCE5D8;
+  --radius:14px;
+  --chip:40px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{font-size:16px}
+body{
+  font-family:'Nunito',system-ui,sans-serif;
+  background:var(--paper);
+  color:var(--ink);
+  min-height:100vh;
+  padding-bottom:calc(72px + env(safe-area-inset-bottom));
+}
+header{
+  padding:18px 16px 10px;
+  display:flex;align-items:baseline;justify-content:space-between;gap:8px;
+}
+h1{font-family:'Fredoka',sans-serif;font-weight:600;font-size:1.35rem;color:var(--green)}
+.week-label{font-size:.85rem;color:var(--ink-soft);font-weight:700}
+main{padding:0 12px}
+section.card{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:14px 12px;
+  margin-bottom:14px;
+}
+h2{
+  font-family:'Fredoka',sans-serif;font-weight:500;font-size:1.02rem;
+  margin-bottom:2px;
+}
+.sub{font-size:.78rem;color:var(--ink-soft);margin-bottom:10px}
+.progress-pill{
+  float:right;font-size:.75rem;font-weight:800;color:var(--green);
+  background:var(--green-soft);border-radius:99px;padding:2px 9px;
+}
+
+/* ---- grille quotidienne ---- */
+.day-row{
+  display:flex;align-items:center;gap:8px;
+  padding:7px 0;border-bottom:1px dashed var(--line);
+}
+.day-row:last-of-type{border-bottom:none}
+.day-name{
+  width:38px;flex:none;font-weight:800;font-size:.72rem;letter-spacing:.04em;
+  color:var(--ink-soft);text-transform:uppercase;
+}
+.day-row.today .day-name{color:var(--green)}
+.day-row.today{background:linear-gradient(90deg,var(--green-soft),transparent 70%);border-radius:8px}
+.chips{display:flex;gap:4px;flex-wrap:wrap;flex:1}
+.gap{width:6px;flex:none}
+
+/* ---- pastille aliment ---- */
+.chip{
+  width:var(--chip);height:var(--chip);flex:none;
+  border:1.5px solid var(--line);border-radius:11px;
+  background:#fff;
+  font-size:1.25rem;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;cursor:pointer;user-select:none;
+  transition:transform .08s ease;
+}
+.chip:active{transform:scale(.88)}
+.chip.done{background:#F6F3EE;border-color:#E5DFD5}
+.chip.done .em{filter:grayscale(1);opacity:.45}
+/* trait de marqueur */
+.chip.done::after{
+  content:"";position:absolute;left:8%;right:8%;top:46%;height:4px;
+  background:var(--marker);border-radius:3px;
+  transform:rotate(-14deg);
+  box-shadow:0 0 0 .4px rgba(217,54,54,.35);
+}
+.chip.done::before{
+  content:"";position:absolute;left:14%;right:14%;top:52%;height:3px;
+  background:var(--marker);opacity:.55;border-radius:3px;
+  transform:rotate(9deg);
+}
+
+/* ---- réserves hebdo ---- */
+.pool-group{margin-bottom:10px}
+.pool-group:last-child{margin-bottom:0}
+.pool-label{
+  font-size:.78rem;font-weight:800;color:var(--ink-soft);margin-bottom:5px;
+  display:flex;align-items:center;gap:6px;
+}
+.pool-label .count{font-weight:700;color:var(--green);font-size:.72rem}
+.pool-label .cap-note{font-size:.68rem;color:var(--amber);font-weight:700}
+.pool-chips{display:flex;gap:5px;flex-wrap:wrap}
+
+/* ---- mémo portions ---- */
+.memo{font-size:.8rem;line-height:1.65;color:var(--ink-soft)}
+.memo b{color:var(--ink)}
+.memo-row{display:flex;gap:8px;padding:3px 0;border-bottom:1px dotted var(--line)}
+.memo-row:last-child{border-bottom:none}
+.memo-row .m-icon{flex:none}
+.memo-row .m-name{font-weight:800;color:var(--ink);width:96px;flex:none}
+
+/* ---- historique ---- */
+.hist-item{
+  border:1px solid var(--line);border-radius:var(--radius);
+  padding:12px;margin-bottom:10px;background:var(--card);
+}
+.hist-item h3{font-family:'Fredoka',sans-serif;font-weight:500;font-size:.95rem;margin-bottom:8px}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:.75rem}
+.bar-row .b-label{width:92px;flex:none;font-weight:700;color:var(--ink-soft)}
+.bar{flex:1;height:9px;background:var(--paper);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--green);border-radius:99px}
+.bar-row .b-val{width:38px;text-align:right;font-weight:800}
+.empty{
+  text-align:center;color:var(--ink-soft);font-size:.88rem;padding:30px 16px;line-height:1.6;
+}
+
+/* ---- réglages ---- */
+.set-row{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 0;border-bottom:1px dashed var(--line);
+}
+.set-row:last-child{border-bottom:none}
+.set-row .s-em{font-size:1.3rem;flex:none;width:32px;text-align:center}
+.set-row .s-name{flex:1;font-weight:700;font-size:.9rem}
+.stepper{display:flex;align-items:center;gap:2px;flex:none}
+.stepper button{
+  width:32px;height:32px;border-radius:9px;border:1.5px solid var(--line);
+  background:#fff;font-size:1.1rem;font-weight:800;color:var(--green);cursor:pointer;
+}
+.stepper button:active{background:var(--green-soft)}
+.stepper .val{width:30px;text-align:center;font-weight:800}
+.del-btn{
+  flex:none;border:none;background:none;color:#B9432F;font-size:1rem;cursor:pointer;
+  padding:4px 6px;opacity:.7;
+}
+.add-row{display:flex;gap:6px;margin-top:12px}
+.add-row input{
+  border:1.5px solid var(--line);border-radius:10px;padding:8px 10px;
+  font-family:inherit;font-size:.9rem;
+}
+.add-row input.i-em{width:56px;text-align:center}
+.add-row input.i-name{flex:1;min-width:0}
+.add-row button{
+  border:none;background:var(--green);color:#fff;border-radius:10px;
+  padding:0 14px;font-weight:800;font-family:inherit;cursor:pointer;
+}
+.hint{font-size:.75rem;color:var(--ink-soft);margin-top:8px;line-height:1.5}
+.danger-zone{margin-top:4px}
+.danger-zone button{
+  width:100%;border:1.5px solid #E4C9C4;background:#FBF3F2;color:#B9432F;
+  border-radius:10px;padding:10px;font-weight:800;font-family:inherit;cursor:pointer;
+}
+
+/* ---- navigation ---- */
+nav{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--card);border-top:1px solid var(--line);
+  display:flex;
+  padding-bottom:env(safe-area-inset-bottom);
+  z-index:10;
+}
+nav button{
+  flex:1;border:none;background:none;padding:10px 0 8px;
+  font-family:inherit;font-size:.72rem;font-weight:800;color:var(--ink-soft);
+  cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;
+}
+nav button .n-em{font-size:1.25rem}
+nav button.active{color:var(--green)}
+.view{display:none}
+.view.active{display:block}
+.toast{
+  position:fixed;left:50%;bottom:86px;transform:translateX(-50%) translateY(20px);
+  background:var(--ink);color:#fff;padding:9px 16px;border-radius:99px;
+  font-size:.82rem;font-weight:700;opacity:0;pointer-events:none;
+  transition:all .25s ease;z-index:20;white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media (prefers-reduced-motion: reduce){
+  *{transition:none !important}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🧲 Mon suivi nutrition</h1>
+  <span class="week-label" id="weekLabel"></span>
+</header>
+
+<main>
+  <!-- ================= VUE SEMAINE ================= -->
+  <div class="view active" id="view-week">
+
+    <section class="card">
+      <span class="progress-pill" id="dailyPill"></span>
+      <h2>Chaque jour</h2>
+      <p class="sub">3 légumes · 2 fruits · 2 produits laitiers — touchez pour barrer</p>
+      <div id="dailyGrid"></div>
+    </section>
+
+    <section class="card">
+      <span class="progress-pill" id="carbsPill"></span>
+      <h2>Féculents de la semaine</h2>
+      <p class="sub">Une pastille = une portion. Les légumineuses remplacent un féculent.</p>
+      <div id="carbsPool"></div>
+    </section>
+
+    <section class="card">
+      <span class="progress-pill" id="proteinsPill"></span>
+      <h2>Protéines de la semaine</h2>
+      <p class="sub">Une pastille = un repas avec cette protéine.</p>
+      <div id="proteinsPool"></div>
+    </section>
+
+    <section class="card">
+      <h2>Repères de portion</h2>
+      <p class="sub">Pour un adulte, par prise</p>
+      <div class="memo">
+        <div class="memo-row"><span class="m-icon">🥕</span><span class="m-name">Légume</span><span>150 à 200 g</span></div>
+        <div class="memo-row"><span class="m-icon">🍎</span><span class="m-name">Fruit</span><span>80 à 100 g</span></div>
+        <div class="memo-row"><span class="m-icon">🥛</span><span class="m-name">Laitier</span><span>80–100 g de yaourt <b>ou</b> 20–30 g de fromage</span></div>
+        <div class="memo-row"><span class="m-icon">🍚</span><span class="m-name">Féculent</span><span>80–100 g cuit <b>ou</b> 40–50 g cru</span></div>
+        <div class="memo-row"><span class="m-icon">🍗</span><span class="m-name">Protéine</span><span>30 à 40 g (protéines pures) ≈ 100–150 g de viande/poisson</span></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ================= VUE HISTORIQUE ================= -->
+  <div class="view" id="view-history">
+    <section class="card">
+      <h2>Semaines passées</h2>
+      <p class="sub">Archivées automatiquement chaque lundi</p>
+      <div id="histList"></div>
+    </section>
+  </div>
+
+  <!-- ================= VUE RÉGLAGES ================= -->
+  <div class="view" id="view-settings">
+    <section class="card">
+      <h2>Protéines · objectifs de la semaine</h2>
+      <p class="sub">Nombre de pastilles disponibles chaque semaine</p>
+      <div id="setProteins"></div>
+      <div class="add-row">
+        <input class="i-em" id="addProtEm" maxlength="4" placeholder="🍤">
+        <input class="i-name" id="addProtName" maxlength="24" placeholder="Nouvel aliment…">
+        <button onclick="addItem('proteins')">+</button>
+      </div>
+      <p class="hint">💡 Repère santé : viande rouge ≤ 500 g/semaine (≈ 2-3 portions) · poisson 2 fois/semaine dont 1 poisson gras.</p>
+    </section>
+
+    <section class="card">
+      <h2>Féculents · objectifs de la semaine</h2>
+      <div id="setCarbs"></div>
+      <div class="add-row">
+        <input class="i-em" id="addCarbEm" maxlength="4" placeholder="🌽">
+        <input class="i-name" id="addCarbName" maxlength="24" placeholder="Nouvel aliment…">
+        <button onclick="addItem('carbs')">+</button>
+      </div>
+      <p class="hint">💡 Repère santé : légumineuses au moins 2 fois/semaine.</p>
+    </section>
+
+    <section class="card danger-zone">
+      <h2>Semaine en cours</h2>
+      <p class="sub">Remettre tous les compteurs à zéro (sans toucher à l'historique)</p>
+      <button onclick="resetWeek()">Réinitialiser la semaine</button>
+    </section>
+  </div>
+</main>
+
+<nav>
+  <button class="active" data-view="week" onclick="switchView('week')"><span class="n-em">📋</span>Semaine</button>
+  <button data-view="history" onclick="switchView('history')"><span class="n-em">📈</span>Historique</button>
+  <button data-view="settings" onclick="switchView('settings')"><span class="n-em">⚙️</span>Réglages</button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+const STORE_KEY = "nutri-suivi-v1";
+const DAYS = ["LUN","MAR","MER","JEU","VEN","SAM","DIM"];
+const DAILY_CATS = [
+  {id:"veg",   emoji:"🥕", target:3},
+  {id:"fruit", emoji:"🍎", target:2},
+  {id:"dairy", emoji:"🥛", target:2},
+];
+
+const DEFAULT_CONFIG = {
+  proteins: [
+    {id:"poulet",  name:"Poulet / volaille", emoji:"🍗", count:4},
+    {id:"boeuf",   name:"Bœuf (viande rouge)", emoji:"🥩", count:2, cap:true},
+    {id:"oeufs",   name:"Œufs", emoji:"🥚", count:4},
+    {id:"poisson", name:"Poisson (dont 1 gras)", emoji:"🐟", count:3},
+  ],
+  carbs: [
+    {id:"riz",     name:"Riz", emoji:"🍚", count:4},
+    {id:"pates",   name:"Pâtes", emoji:"🍝", count:3},
+    {id:"semoule", name:"Semoule", emoji:"🥣", count:2},
+    {id:"pdt",     name:"Pommes de terre", emoji:"🥔", count:2},
+    {id:"legum",   name:"Légumineuses", emoji:"🫘", count:3},
+  ],
+};
+
+// ---------- dates ----------
+function mondayOf(d){
+  const x = new Date(d); x.setHours(0,0,0,0);
+  const day = (x.getDay() + 6) % 7; // 0 = lundi
+  x.setDate(x.getDate() - day);
+  return x;
+}
+function weekKey(d){
+  const m = mondayOf(d);
+  return m.toISOString().slice(0,10);
+}
+function fmtWeek(startIso){
+  const d = new Date(startIso + "T00:00:00");
+  return "Semaine du " + d.toLocaleDateString("fr-FR",{day:"numeric",month:"long"});
+}
+function todayIndex(){ return (new Date().getDay() + 6) % 7; }
+
+// ---------- état ----------
+let state = null;
+
+function freshWeek(config){
+  const daily = {};
+  for (let i=0;i<7;i++){
+    daily[i] = {veg:0, fruit:0, dairy:0};
+  }
+  const pools = {proteins:{}, carbs:{}};
+  for (const g of ["proteins","carbs"])
+    for (const it of config[g]) pools[g][it.id] = 0;
+  return { key: weekKey(new Date()), daily, pools };
+}
+
+function computeStats(week, config){
+  let dDone=0, dTot=0;
+  for (let i=0;i<7;i++)
+    for (const c of DAILY_CATS){ dDone += week.daily[i][c.id]; dTot += c.target; }
+  const pool = g=>{
+    let done=0, tot=0;
+    for (const it of config[g]){ done += Math.min(week.pools[g][it.id]||0, it.count); tot += it.count; }
+    return {done, tot};
+  };
+  const p = pool("proteins"), c = pool("carbs");
+  return {
+    daily:{done:dDone, tot:dTot},
+    proteins:p, carbs:c,
+  };
+}
+
+function load(){
+  let s = null;
+  try { s = JSON.parse(localStorage.getItem(STORE_KEY)); } catch(e){}
+  if (!s){
+    s = { config: structuredClone(DEFAULT_CONFIG), week: null, history: [] };
+    s.week = freshWeek(s.config);
+  }
+  // nouvelle semaine ? → archiver l'ancienne
+  const nowKey = weekKey(new Date());
+  if (s.week.key !== nowKey){
+    const stats = computeStats(s.week, s.config);
+    s.history.unshift({ key: s.week.key, stats });
+    if (s.history.length > 26) s.history.length = 26; // ~6 mois
+    s.week = freshWeek(s.config);
+    save(s);
+  }
+  return s;
+}
+function save(s){ localStorage.setItem(STORE_KEY, JSON.stringify(s || state)); }
+
+// ---------- rendu ----------
+function chipHTML(emoji, done, onclick, label){
+  return `<button class="chip${done?" done":""}" onclick="${onclick}" aria-pressed="${done}" aria-label="${label}"><span class="em">${emoji}</span></button>`;
+}
+
+function renderDaily(){
+  const grid = document.getElementById("dailyGrid");
+  const tIdx = todayIndex();
+  let html = "";
+  for (let i=0;i<7;i++){
+    html += `<div class="day-row${i===tIdx?" today":""}"><span class="day-name">${DAYS[i]}</span><div class="chips">`;
+    DAILY_CATS.forEach((c, ci)=>{
+      const done = state.week.daily[i][c.id];
+      for (let k=0;k<c.target;k++){
+        html += chipHTML(c.emoji, k<done, `tapDaily(${i},'${c.id}')`, `${c.id} jour ${DAYS[i]}`);
+      }
+      if (ci < DAILY_CATS.length-1) html += `<span class="gap"></span>`;
+    });
+    html += `</div></div>`;
+  }
+  grid.innerHTML = html;
+}
+
+function renderPool(group, elId){
+  const el = document.getElementById(elId);
+  let html = "";
+  for (const it of state.config[group]){
+    if (it.count === 0) continue;
+    const done = state.week.pools[group][it.id] || 0;
+    html += `<div class="pool-group"><div class="pool-label">${it.name}
+      <span class="count">${Math.min(done,it.count)}/${it.count}</span>
+      ${it.cap ? '<span class="cap-note">· plafond conseillé</span>' : ''}</div><div class="pool-chips">`;
+    for (let k=0;k<it.count;k++){
+      html += chipHTML(it.emoji, k<done, `tapPool('${group}','${it.id}')`, it.name);
+    }
+    html += `</div></div>`;
+  }
+  el.innerHTML = html || `<p class="empty">Aucun aliment configuré — ajoutez-en dans Réglages.</p>`;
+}
+
+function renderPills(){
+  const s = computeStats(state.week, state.config);
+  const pct = o => o.tot ? Math.round(100*o.done/o.tot) : 0;
+  document.getElementById("dailyPill").textContent    = `${s.daily.done}/${s.daily.tot}`;
+  document.getElementById("carbsPill").textContent    = `${s.carbs.done}/${s.carbs.tot}`;
+  document.getElementById("proteinsPill").textContent = `${s.proteins.done}/${s.proteins.tot}`;
+}
+
+function renderHistory(){
+  const el = document.getElementById("histList");
+  if (!state.history.length){
+    el.innerHTML = `<p class="empty">Rien pour l'instant.<br>Votre première semaine sera archivée lundi prochain. 📅</p>`;
+    return;
+  }
+  const pct = o => o.tot ? Math.round(100*o.done/o.tot) : 0;
+  el.innerHTML = state.history.map(h=>{
+    const rows = [
+      ["Quotidien 🥕🍎🥛", h.stats.daily],
+      ["Féculents", h.stats.carbs],
+      ["Protéines", h.stats.proteins],
+    ].map(([label,o])=>`
+      <div class="bar-row"><span class="b-label">${label}</span>
+      <span class="bar"><i style="width:${pct(o)}%"></i></span>
+      <span class="b-val">${pct(o)}%</span></div>`).join("");
+    return `<div class="hist-item"><h3>${fmtWeek(h.key)}</h3>${rows}</div>`;
+  }).join("");
+}
+
+function renderSettings(){
+  for (const [group, elId] of [["proteins","setProteins"],["carbs","setCarbs"]]){
+    const el = document.getElementById(elId);
+    el.innerHTML = state.config[group].map((it,idx)=>`
+      <div class="set-row">
+        <span class="s-em">${it.emoji}</span>
+        <span class="s-name">${it.name}</span>
+        <div class="stepper">
+          <button onclick="stepItem('${group}',${idx},-1)" aria-label="moins">−</button>
+          <span class="val">${it.count}</span>
+          <button onclick="stepItem('${group}',${idx},1)" aria-label="plus">+</button>
+        </div>
+        <button class="del-btn" onclick="delItem('${group}',${idx})" aria-label="supprimer">✕</button>
+      </div>`).join("");
+  }
+}
+
+function renderAll(){
+  document.getElementById("weekLabel").textContent = fmtWeek(state.week.key);
+  renderDaily(); renderPool("carbs","carbsPool"); renderPool("proteins","proteinsPool");
+  renderPills(); renderHistory(); renderSettings();
+}
+
+// ---------- interactions ----------
+function tapDaily(dayIdx, cat){
+  const target = DAILY_CATS.find(c=>c.id===cat).target;
+  const cur = state.week.daily[dayIdx][cat];
+  state.week.daily[dayIdx][cat] = cur >= target ? cur - 1 : cur + 1;
+  // logique : tap = +1 tant que pas plein ; si plein, tap = -1 (annulation)
+  save(); renderDaily(); renderPills();
+}
+function tapPool(group, id){
+  const it = state.config[group].find(x=>x.id===id);
+  const cur = state.week.pools[group][id] || 0;
+  state.week.pools[group][id] = cur >= it.count ? cur - 1 : cur + 1;
+  save(); renderPool(group, group==="carbs"?"carbsPool":"proteinsPool"); renderPills();
+}
+function stepItem(group, idx, delta){
+  const it = state.config[group][idx];
+  it.count = Math.max(0, Math.min(14, it.count + delta));
+  const done = state.week.pools[group][it.id] || 0;
+  if (done > it.count) state.week.pools[group][it.id] = it.count;
+  save(); renderSettings(); renderPool(group, group==="carbs"?"carbsPool":"proteinsPool"); renderPills();
+}
+function delItem(group, idx){
+  const it = state.config[group][idx];
+  if (!confirm(`Supprimer « ${it.name} » ?`)) return;
+  state.config[group].splice(idx,1);
+  delete state.week.pools[group][it.id];
+  save(); renderAll();
+}
+function addItem(group){
+  const emEl = document.getElementById(group==="proteins"?"addProtEm":"addCarbEm");
+  const nameEl = document.getElementById(group==="proteins"?"addProtName":"addCarbName");
+  const name = nameEl.value.trim();
+  const emoji = emEl.value.trim() || "🍽️";
+  if (!name){ toast("Donnez un nom à l'aliment"); return; }
+  const id = "c" + Date.now().toString(36);
+  state.config[group].push({id, name, emoji, count:1});
+  state.week.pools[group][id] = 0;
+  emEl.value = ""; nameEl.value = "";
+  save(); renderAll(); toast(`${emoji} ${name} ajouté`);
+}
+function resetWeek(){
+  if (!confirm("Remettre la semaine en cours à zéro ?")) return;
+  state.week = freshWeek(state.config);
+  save(); renderAll(); toast("Semaine réinitialisée");
+}
+function switchView(v){
+  document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));
+  document.getElementById("view-"+v).classList.add("active");
+  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active", b.dataset.view===v));
+  window.scrollTo({top:0});
+}
+let toastTimer = null;
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove("show"), 2200);
+}
+
+// ---------- démarrage ----------
+state = load();
+renderAll();
+
+// PWA : service worker (ignoré silencieusement hors HTTPS / en prévisualisation)
+if ("serviceWorker" in navigator){
+  window.addEventListener("load", ()=>{
+    navigator.serviceWorker.register("sw.js").catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
