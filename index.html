@@ -67,7 +67,7 @@ h2{
 }
 .quest .q-em{font-size:1.15rem;display:block;line-height:1.2}
 .quest .q-name{font-size:.64rem;font-weight:800;color:var(--ink-soft);display:block;margin:2px 0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.quest .q-bar{height:5px;background:var(--paper);border-radius:99px;overflow:hidden;margin:0 6px}
+.quest .q-bar{display:block;height:5px;background:var(--paper);border-radius:99px;overflow:hidden;margin:0 6px}
 .quest .q-bar i{display:block;height:100%;border-radius:99px;background:var(--amber)}
 .quest.done{border-color:#BFDCC2;background:#F2F9F1}
 .quest.done .q-name{color:var(--green)}
@@ -364,14 +364,14 @@ const DEFAULT_CONFIG = {
     {id:"pates",   name:"Pâtes", emoji:"🍝", count:3},
     {id:"semoule", name:"Semoule", emoji:"🥣", count:2},
     {id:"pdt",     name:"Pommes de terre", emoji:"🥔", count:2},
-    {id:"legum",   name:"Légumineuses", emoji:"🫘", count:3},
+    {id:"legum",   name:"Légumineuses", emoji:"🥜", count:3},
   ],
   micro: [
     {id:"noix",    name:"Poignée de noix / oléagineux", emoji:"🌰", count:4},
     {id:"feuillu", name:"Légume vert feuillu", emoji:"🥬", count:3},
     {id:"colore",  name:"Légume / fruit très coloré", emoji:"🍅", count:3},
     {id:"agrume",  name:"Agrume ou kiwi", emoji:"🍊", count:3},
-    {id:"huile",   name:"Huile colza / noix / olive", emoji:"🫒", count:3},
+    {id:"huile",   name:"Huile colza / noix / olive", emoji:"🌻", count:3},
     {id:"complet", name:"Féculent version complète", emoji:"🌾", count:3},
   ],
 };
@@ -389,7 +389,7 @@ const QUESTS = [
   {id:"fibres",name:"Fibres",    emoji:"🌾", srcs:[{g:"daily",id:"vegfruit",need:25,w:.5},{g:"micro",id:"complet",need:3,w:.3},{g:"carbs",id:"legum",need:2,w:.2}]},
   {id:"mg",    name:"Magnésium", emoji:"🌰", srcs:[{g:"micro",id:"noix",need:4,w:.5},{g:"micro",id:"complet",need:3,w:.3},{g:"carbs",id:"legum",need:2,w:.2}]},
   {id:"vita",  name:"Vit. A",    emoji:"🥕", srcs:[{g:"micro",id:"colore",need:3,w:.7},{g:"daily",id:"veg",need:15,w:.3}]},
-  {id:"vite",  name:"Vit. E",    emoji:"🫒", srcs:[{g:"micro",id:"noix",need:4,w:.6},{g:"micro",id:"huile",need:3,w:.4}]},
+  {id:"vite",  name:"Vit. E",    emoji:"🌻", srcs:[{g:"micro",id:"noix",need:4,w:.6},{g:"micro",id:"huile",need:3,w:.4}]},
 ];
 
 // ---------- dates ----------
@@ -399,10 +399,13 @@ function mondayOf(d){
   x.setDate(x.getDate() - day);
   return x;
 }
-function weekKey(d){
-  const m = mondayOf(d);
-  return m.toISOString().slice(0,10);
+/* Date locale YYYY-MM-DD (toISOString convertirait en UTC et pourrait
+   décaler d'un jour : en France, lundi 00:00 = dimanche 22:00 UTC) */
+function isoLocal(d){
+  const p = n => String(n).padStart(2,"0");
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
 }
+function weekKey(d){ return isoLocal(mondayOf(d)); }
 function fmtWeek(startIso){
   const d = new Date(startIso + "T00:00:00");
   return "Semaine du " + d.toLocaleDateString("fr-FR",{day:"numeric",month:"long"});
@@ -412,15 +415,22 @@ function todayIndex(){ return (new Date().getDay() + 6) % 7; }
 // ---------- état ----------
 let state = null;
 
+/* Chaque pastille est autonome : un tableau de booléens par aliment.
+   nDone compte les pastilles barrées (tolère l'ancien format numérique). */
+const nDone = a => Array.isArray(a) ? a.reduce((s,v)=>s+(v?1:0),0) : (a||0);
+/* Échappe le HTML des textes saisis par l'utilisateur (noms d'aliments) */
+const esc = s => String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
 function freshWeek(config){
   const daily = {};
   for (let i=0;i<7;i++){
-    daily[i] = {veg:0, fruit:0, dairy:0};
+    daily[i] = {};
+    for (const c of DAILY_CATS) daily[i][c.id] = Array(c.target).fill(false);
   }
   const pools = {};
   for (const g of Object.keys(GROUPS)){
     pools[g] = {};
-    for (const it of config[g]) pools[g][it.id] = 0;
+    for (const it of config[g]) pools[g][it.id] = Array(it.count).fill(false);
   }
   return { key: weekKey(new Date()), daily, pools };
 }
@@ -430,17 +440,17 @@ function srcDone(week, src){
   if (src.g === "daily"){
     let sum = 0;
     for (let i=0;i<7;i++){
-      if (src.id === "vegfruit") sum += week.daily[i].veg + week.daily[i].fruit;
-      else sum += week.daily[i][src.id] || 0;
+      if (src.id === "vegfruit") sum += nDone(week.daily[i].veg) + nDone(week.daily[i].fruit);
+      else sum += nDone(week.daily[i][src.id]);
     }
     return sum;
   }
   const pools = week.pools[src.g] || {};
   if (src.id === "__viande")
-    return (pools.poulet||0) + (pools.boeuf||0);
+    return nDone(pools.poulet) + nDone(pools.boeuf);
   if (src.id === "__animal")
-    return (pools.poulet||0) + (pools.boeuf||0) + (pools.oeufs||0) + (pools.poisson||0) + (pools.poissongras||0);
-  return pools[src.id] || 0;
+    return nDone(pools.poulet) + nDone(pools.boeuf) + nDone(pools.oeufs) + nDone(pools.poisson) + nDone(pools.poissongras);
+  return nDone(pools[src.id]);
 }
 
 /* Couverture 0→1 d'une quête */
@@ -453,10 +463,10 @@ function questProgress(week, q){
 function computeStats(week, config){
   let dDone=0, dTot=0;
   for (let i=0;i<7;i++)
-    for (const c of DAILY_CATS){ dDone += week.daily[i][c.id]; dTot += c.target; }
+    for (const c of DAILY_CATS){ dDone += nDone(week.daily[i][c.id]); dTot += c.target; }
   const pool = g=>{
     let done=0, tot=0;
-    for (const it of config[g]){ done += Math.min(week.pools[g]?.[it.id]||0, it.count); tot += it.count; }
+    for (const it of config[g]){ done += Math.min(nDone(week.pools[g]?.[it.id]), it.count); tot += it.count; }
     return {done, tot};
   };
   const questsDone = QUESTS.filter(q => questProgress(week, q) >= 1).length;
@@ -491,6 +501,42 @@ function migrate(s){
     if (!s.week.pools.micro) s.week.pools.micro = {};
     for (const it of s.config.micro)
       if (!(it.id in s.week.pools.micro)) s.week.pools.micro[it.id] = 0;
+  }
+  // v2 → v3 : compteurs → tableaux de booléens (pastilles indépendantes)
+  const toArr = (v, len) => {
+    if (Array.isArray(v)){
+      const a = v.slice(0, len).map(Boolean);
+      while (a.length < len) a.push(false);
+      return a;
+    }
+    const n = Math.min(v || 0, len);
+    return Array.from({length: len}, (_, k) => k < n);
+  };
+  if (s.week){
+    for (let i=0;i<7;i++){
+      if (!s.week.daily[i]) s.week.daily[i] = {};
+      for (const c of DAILY_CATS)
+        s.week.daily[i][c.id] = toArr(s.week.daily[i][c.id], c.target);
+    }
+    for (const g of Object.keys(GROUPS)){
+      if (!s.week.pools[g]) s.week.pools[g] = {};
+      for (const it of s.config[g])
+        s.week.pools[g][it.id] = toArr(s.week.pools[g][it.id], it.count);
+    }
+  }
+  // emojis Unicode 13+ (🫒 🫘) remplacés : non affichés sur certains systèmes
+  const emojiFix = { huile:"🌻", legum:"🥜" };
+  for (const g of Object.keys(GROUPS))
+    for (const it of s.config[g])
+      if (emojiFix[it.id] && (it.emoji === "🫒" || it.emoji === "🫘"))
+        it.emoji = emojiFix[it.id];
+  // réalignement de la clé de semaine (l'ancien calcul UTC pouvait donner J-1) :
+  // si la clé stockée désigne le même lundi à ±1 jour près, on la corrige sans archiver
+  if (s.week && s.week.key){
+    const stored = new Date(s.week.key + "T00:00:00");
+    const monday = mondayOf(new Date());
+    if (Math.abs(stored - monday) <= 36 * 3600 * 1000)
+      s.week.key = weekKey(new Date());
   }
   return s;
 }
@@ -528,9 +574,9 @@ function renderDaily(){
   for (let i=0;i<7;i++){
     html += `<div class="day-row${i===tIdx?" today":""}"><span class="day-name">${DAYS[i]}</span><div class="chips">`;
     DAILY_CATS.forEach((c, ci)=>{
-      const done = state.week.daily[i][c.id];
+      const arr = state.week.daily[i][c.id];
       for (let k=0;k<c.target;k++){
-        html += chipHTML(c.emoji, k<done, `tapDaily(${i},'${c.id}')`, `${c.id} jour ${DAYS[i]}`);
+        html += chipHTML(c.emoji, !!arr[k], `tapDaily(${i},'${c.id}',${k})`, `${c.id} ${k+1} jour ${DAYS[i]}`);
       }
       if (ci < DAILY_CATS.length-1) html += `<span class="gap"></span>`;
     });
@@ -544,12 +590,12 @@ function renderPool(group, elId){
   let html = "";
   for (const it of state.config[group]){
     if (it.count === 0) continue;
-    const done = state.week.pools[group][it.id] || 0;
-    html += `<div class="pool-group"><div class="pool-label">${it.name}
-      <span class="count">${Math.min(done,it.count)}/${it.count}</span>
+    const arr = state.week.pools[group][it.id] || [];
+    html += `<div class="pool-group"><div class="pool-label">${esc(it.name)}
+      <span class="count">${nDone(arr)}/${it.count}</span>
       ${it.cap ? '<span class="cap-note">· plafond conseillé</span>' : ''}</div><div class="pool-chips">`;
     for (let k=0;k<it.count;k++){
-      html += chipHTML(it.emoji, k<done, `tapPool('${group}','${it.id}')`, it.name);
+      html += chipHTML(it.emoji, !!arr[k], `tapPool('${group}','${it.id}',${k})`, esc(it.name) + " " + (k+1));
     }
     html += `</div></div>`;
   }
@@ -620,8 +666,8 @@ function renderSettings(){
     const el = document.getElementById(elId);
     el.innerHTML = state.config[group].map((it,idx)=>`
       <div class="set-row">
-        <span class="s-em">${it.emoji}</span>
-        <span class="s-name">${it.name}</span>
+        <span class="s-em">${esc(it.emoji)}</span>
+        <span class="s-name">${esc(it.name)}</span>
         <div class="stepper">
           <button onclick="stepItem('${group}',${idx},-1)" aria-label="moins">−</button>
           <span class="val">${it.count}</span>
@@ -640,24 +686,23 @@ function renderAll(){
 }
 
 // ---------- interactions ----------
-function tapDaily(dayIdx, cat){
-  const target = DAILY_CATS.find(c=>c.id===cat).target;
-  const cur = state.week.daily[dayIdx][cat];
-  state.week.daily[dayIdx][cat] = cur >= target ? cur - 1 : cur + 1;
-  // logique : tap = +1 tant que pas plein ; si plein, tap = -1 (annulation)
+function tapDaily(dayIdx, cat, k){
+  const arr = state.week.daily[dayIdx][cat];
+  arr[k] = !arr[k];
   save(); renderDaily(); renderQuests(); renderPills();
 }
-function tapPool(group, id){
-  const it = state.config[group].find(x=>x.id===id);
-  const cur = state.week.pools[group][id] || 0;
-  state.week.pools[group][id] = cur >= it.count ? cur - 1 : cur + 1;
+function tapPool(group, id, k){
+  const arr = state.week.pools[group][id];
+  arr[k] = !arr[k];
   save(); renderPool(group, GROUPS[group]); renderQuests(); renderPills();
 }
 function stepItem(group, idx, delta){
   const it = state.config[group][idx];
   it.count = Math.max(0, Math.min(14, it.count + delta));
-  const done = state.week.pools[group][it.id] || 0;
-  if (done > it.count) state.week.pools[group][it.id] = it.count;
+  const arr = state.week.pools[group][it.id] || [];
+  while (arr.length < it.count) arr.push(false);
+  arr.length = it.count;
+  state.week.pools[group][it.id] = arr;
   save(); renderSettings(); renderPool(group, GROUPS[group]); renderQuests(); renderPills();
 }
 function delItem(group, idx){
@@ -676,7 +721,7 @@ function addItem(group){
   if (!name){ toast("Donnez un nom à l'aliment"); return; }
   const id = "c" + Date.now().toString(36);
   state.config[group].push({id, name, emoji, count:1});
-  state.week.pools[group][id] = 0;
+  state.week.pools[group][id] = [false];
   emEl.value = ""; nameEl.value = "";
   save(); renderAll(); toast(`${emoji} ${name} ajouté`);
 }
