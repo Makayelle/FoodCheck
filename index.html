@@ -183,6 +183,7 @@ h2{
 .bar i.mid{background:var(--amber)}
 .bar i.low{background:#C4553F}
 .bar i.jok{background:#D9C08F}
+.jok-detail{flex:1;font-size:.78rem;font-weight:800;color:var(--amber)}
 .bar-row .b-val{width:38px;text-align:right;font-weight:800}
 .empty{
   text-align:center;color:var(--ink-soft);font-size:.88rem;padding:30px 16px;line-height:1.6;
@@ -559,6 +560,9 @@ function computeStats(week, config){
     carbs: pool("carbs"),
     micro: pool("micro"),
     jokers: pool("jokers"),
+    jokersSpent: config.jokers
+      .map(it => ({emoji: it.emoji, n: nDone(week.pools.jokers?.[it.id])}))
+      .filter(x => x.n > 0),
     quests:{done: questsDone, tot: QUESTS.length},
     checkin:{energy: avg("energy"), mood: avg("mood")},
   };
@@ -761,22 +765,31 @@ function renderHistory(){
   const pct = o => o.tot ? Math.round(100*o.done/o.tot) : 0;
   const barClass = p => p >= 80 ? "hi" : (p >= 50 ? "mid" : "low");
   el.innerHTML = state.history.map(h=>{
-    /* même ordre que la page de saisie : Quêtes, Quotidien, Féculents, Protéines, Micro, Jokers */
+    /* même ordre que la page de saisie : Quêtes, Quotidien, Féculents, Protéines, Micro — jokers à part */
     const cats = [];
-    if (h.stats.quests) cats.push(["Quêtes", h.stats.quests, null]);
-    cats.push(["Quotidien", h.stats.daily, null]);
-    cats.push(["Féculents", h.stats.carbs, null]);
-    cats.push(["Protéines", h.stats.proteins, null]);
-    if (h.stats.micro)  cats.push(["Variété micro", h.stats.micro, null]);
-    if (h.stats.jokers) cats.push(["Jokers dépensés", h.stats.jokers, "jok"]);
-    const rows = cats.map(([label,o,cls])=>{
+    if (h.stats.quests) cats.push(["Quêtes", h.stats.quests]);
+    cats.push(["Quotidien", h.stats.daily]);
+    cats.push(["Féculents", h.stats.carbs]);
+    cats.push(["Protéines", h.stats.proteins]);
+    if (h.stats.micro)  cats.push(["Variété micro", h.stats.micro]);
+    const rows = cats.map(([label,o])=>{
       const p = pct(o);
       return `<div class="bar-row"><span class="b-label">${label}</span>
-      <span class="bar"><i class="${cls || barClass(p)}" style="width:${p}%"></i></span>
+      <span class="bar"><i class="${barClass(p)}" style="width:${p}%"></i></span>
       <span class="b-val">${p}%</span></div>`;
     }).join("");
+    /* jokers : détail consommé (1 🍷 · 2 🍰), pas de pourcentage */
+    let jokRow = "";
+    if (h.stats.jokers){
+      const detail = h.stats.jokersSpent
+        ? (h.stats.jokersSpent.length
+            ? h.stats.jokersSpent.map(x=>`${x.n} ${esc(x.emoji)}`).join(" · ")
+            : "aucun 🎉")
+        : `${h.stats.jokers.done} au total`;
+      jokRow = `<div class="bar-row"><span class="b-label">Jokers dépensés</span><span class="jok-detail">${detail}</span></div>`;
+    }
     /* badge de tendance : moyenne de tout sauf jokers */
-    const scored = cats.filter(c=>c[2]!=="jok").map(c=>pct(c[1]));
+    const scored = cats.map(c=>pct(c[1]));
     const avg = scored.length ? scored.reduce((a,b)=>a+b,0)/scored.length : 0;
     const badge = avg >= 90 ? ["hi","🌟 Excellente"]
                 : avg >= 75 ? ["hi","👍 Bonne"]
@@ -785,7 +798,7 @@ function renderHistory(){
     const fmt5 = v => v==null ? "–" : v.toFixed(1).replace(".",",");
     const feel = h.stats.checkin && (h.stats.checkin.energy!=null || h.stats.checkin.mood!=null)
       ? `<div class="hist-feel">Ressenti moyen · ⚡ <b>${fmt5(h.stats.checkin.energy)}</b>/5 · 😊 <b>${fmt5(h.stats.checkin.mood)}</b>/5</div>` : "";
-    return `<div class="hist-item"><h3><span>${fmtWeek(h.key)}</span><span class="hist-badge ${badge[0]}">${badge[1]}</span></h3>${rows}${feel}</div>`;
+    return `<div class="hist-item"><h3><span>${fmtWeek(h.key)}</span><span class="hist-badge ${badge[0]}">${badge[1]}</span></h3>${rows}${jokRow}${feel}</div>`;
   }).join("");
 }
 
