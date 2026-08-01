@@ -322,6 +322,13 @@ nav button.active{color:var(--green)}
     </section>
 
     <section class="card">
+      <span class="progress-pill" id="muscuPill"></span>
+      <h2>💪 Renforcement musculaire</h2>
+      <p class="sub">2 séances par semaine, en plus de l'activité quotidienne (OMS)</p>
+      <div id="muscuPool"></div>
+    </section>
+
+    <section class="card">
       <span class="progress-pill" id="carbsPill"></span>
       <h2>Féculents de la semaine</h2>
       <p class="sub">Une pastille = une portion. Les légumineuses remplacent un féculent.</p>
@@ -377,6 +384,7 @@ nav button.active{color:var(--green)}
         <div class="pnns-row"><span class="pnns-em">🍰</span><div><b>Sucre, sel & ultra-transformé</b><br>À limiter sans interdiction totale — le plaisir occasionnel a sa place.</div></div>
         <div class="pnns-row"><span class="pnns-em">🍷</span><div><b>Alcool</b><br>Maximum 2 verres/jour, pas tous les jours, et pas plus de 10/semaine.</div></div>
         <div class="pnns-row"><span class="pnns-em">🏃</span><div><b>Activité physique</b><br>30 minutes par jour d'activité dynamique, et limiter les temps assis prolongés.</div></div>
+        <div class="pnns-row"><span class="pnns-em">💪</span><div><b>Renforcement musculaire</b><br>2 séances par semaine, en plus de l'activité quotidienne (OMS). Exemple simple sans matériel : squats, pompes (ou sur les genoux), fentes, gainage — 3 séries de chaque, 15-20 min. Le bricolage ou jardinage intense (port de charges, efforts répétés) compte aussi.</div></div>
       </div>
     </section>
 
@@ -468,6 +476,17 @@ nav button.active{color:var(--green)}
       <p class="hint">💡 Repères santé : alcool max 2 verres/jour, 10/semaine, pas tous les jours · produits sucrés et ultra-transformés à limiter. Mettez un budget réaliste pour vous, pas idéalisé.</p>
     </section>
 
+    <section class="card">
+      <h2>💪 Renforcement musculaire</h2>
+      <div id="setMuscu"></div>
+      <div class="add-row">
+        <input class="i-em" id="addMuscuEm" maxlength="4" placeholder="🏋️">
+        <input class="i-name" id="addMuscuName" maxlength="24" placeholder="Nouveau type de séance…">
+        <button onclick="addItem('muscu')">+</button>
+      </div>
+      <p class="hint">💡 Repère OMS : 2 séances/semaine touchant les grands groupes musculaires — squats, pompes, gainage, charges, ou bricolage/jardinage physique.</p>
+    </section>
+
     <section class="card danger-zone">
       <h2>Semaine en cours</h2>
       <p class="sub">Remettre tous les compteurs à zéro (sans toucher à l'historique)</p>
@@ -496,6 +515,7 @@ const SHORT_NAMES = {
   noix:"Noix / lin / chia", autresoleagineux:"Autres oléagineux", feuillu:"Légume feuillu", colore:"Fruit/lég. coloré",
   agrume:"Agrume ou kiwi", huile:"Huile colza/noix", huileolive:"Huile olive/avocat", complet:"Féculent complet",
   alcool:"Alcool", sucre:"Sucré / dessert", transfo:"Ultra-transformé",
+  seances:"Séances renfo",
 };
 const shortName = it => SHORT_NAMES[it.id] || it.name;
 const DAILY_CATS = [
@@ -505,7 +525,7 @@ const DAILY_CATS = [
   {id:"move",  emoji:"🏃", target:1},
 ];
 
-const GROUPS = { proteins:"proteinsPool", carbs:"carbsPool", micro:"microPool", jokers:"jokersPool" };
+const GROUPS = { proteins:"proteinsPool", carbs:"carbsPool", micro:"microPool", jokers:"jokersPool", muscu:"muscuPool" };
 
 const DEFAULT_CONFIG = {
   proteinsTarget: 14,
@@ -539,6 +559,9 @@ const DEFAULT_CONFIG = {
     {id:"sucre",  name:"Produit sucré / dessert", emoji:"🍰", count:3},
     {id:"transfo",name:"Ultra-transformé / plat préparé", emoji:"🍕", count:2},
   ],
+  muscu: [
+    {id:"seances", name:"Séances (squats, gainage, charges, bricolage intense…)", emoji:"💪", count:2},
+  ],
 };
 
 /* Quêtes : chaque micronutriment est couvert par des sources pondérées.
@@ -556,6 +579,7 @@ const QUESTS = [
   {id:"vita",  name:"Vit. A",    emoji:"🥕", srcs:[{g:"micro",id:"colore",need:3,w:.7},{g:"daily",id:"veg",need:15,w:.3}]},
   {id:"vite",  name:"Vit. E",    emoji:"🌻", srcs:[{g:"micro",id:"noix",need:4,w:.3},{g:"micro",id:"autresoleagineux",need:3,w:.3},{g:"micro",id:"huile",need:3,w:.4}]},
   {id:"move",  name:"Bouger",    emoji:"🏃", srcs:[{g:"daily",id:"move",need:7,w:1}]},
+  {id:"muscu", name:"Muscu",     emoji:"💪", srcs:[{g:"muscu",id:"seances",need:2,w:1}]},
 ];
 
 // ---------- dates ----------
@@ -663,6 +687,7 @@ function computeStats(week, config){
     carbsVariety,
     micro: pool("micro"),
     jokers: pool("jokers"),
+    muscu: pool("muscu"),
     jokersSpent: config.jokers
       .map(it => ({emoji: it.emoji, n: nDone(week.pools.jokers?.[it.id])}))
       .filter(x => x.n > 0),
@@ -715,6 +740,10 @@ function migrate(s){
   }
   if (!s.config.jokers){
     s.config.jokers = structuredClone(DEFAULT_CONFIG.jokers);
+  }
+  // v20 → v21 : ajout du renforcement musculaire (2 séances/semaine, repère OMS)
+  if (!s.config.muscu){
+    s.config.muscu = structuredClone(DEFAULT_CONFIG.muscu);
   }
   // v14 → v15 : intégration officielle de l'avoine dans les féculents,
   // en fusionnant une éventuelle entrée personnalisée déjà créée à la main
@@ -949,6 +978,7 @@ function renderHistory(){
     cats.push(["Féculents", hasVariety ? h.stats.carbsVariety : h.stats.carbs, hasVariety ? "variety" : "pct"]);
     cats.push(["Protéines", h.stats.proteins, "pct"]);
     if (h.stats.micro)  cats.push(["Variété micro", h.stats.micro, "pct"]);
+    if (h.stats.muscu)  cats.push(["Renforcement", h.stats.muscu, "pct"]);
     const rows = cats.map(([label,o,kind])=>{
       const p = pct(o);
       const valText = kind === "variety" ? `${o.done}/${o.tot} variés` : `${p}%`;
@@ -982,7 +1012,7 @@ function renderHistory(){
 
 function renderSettings(){
   document.getElementById("proteinsTargetVal").textContent = state.config.proteinsTarget || 14;
-  for (const [group, elId] of [["proteins","setProteins"],["carbs","setCarbs"],["micro","setMicro"],["jokers","setJokers"]]){
+  for (const [group, elId] of [["proteins","setProteins"],["carbs","setCarbs"],["micro","setMicro"],["jokers","setJokers"],["muscu","setMuscu"]]){
     const el = document.getElementById(elId);
     el.innerHTML = state.config[group].map((it,idx)=>`
       <div class="set-row">
@@ -1042,7 +1072,7 @@ function delItem(group, idx){
   save(); renderAll();
 }
 function addItem(group){
-  const ids = {proteins:["addProtEm","addProtName"], carbs:["addCarbEm","addCarbName"], micro:["addMicroEm","addMicroName"], jokers:["addJokEm","addJokName"]};
+  const ids = {proteins:["addProtEm","addProtName"], carbs:["addCarbEm","addCarbName"], micro:["addMicroEm","addMicroName"], jokers:["addJokEm","addJokName"], muscu:["addMuscuEm","addMuscuName"]};
   const emEl = document.getElementById(ids[group][0]);
   const nameEl = document.getElementById(ids[group][1]);
   const name = nameEl.value.trim();
