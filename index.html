@@ -199,7 +199,10 @@ h2{
 .hist-item h3{
   font-family:'Fredoka',sans-serif;font-weight:500;font-size:.95rem;margin-bottom:8px;
   display:flex;justify-content:space-between;align-items:center;gap:8px;
+  cursor:pointer;
 }
+.hist-head-right{display:flex;align-items:center;gap:7px;flex:none}
+.hist-chevron{font-size:.7rem;color:var(--ink-soft);font-weight:800;width:12px;text-align:center}
 .hist-badge{
   font-family:'Nunito',sans-serif;font-size:.72rem;font-weight:800;
   padding:3px 10px;border-radius:99px;white-space:nowrap;
@@ -604,6 +607,8 @@ function todayIndex(){ return (new Date().getDay() + 6) % 7; }
 
 // ---------- état ----------
 let state = null;
+/* Semaines dépliées dans l'Historique — la plus récente s'ouvre par défaut au démarrage */
+let expandedWeeks = new Set();
 
 /* Chaque pastille est autonome : un tableau de booléens par aliment.
    nDone compte les pastilles barrées (tolère l'ancien format numérique). */
@@ -968,17 +973,19 @@ function renderHistory(){
   const pct = o => o.tot ? Math.round(100*o.done/o.tot) : 0;
   const barClass = p => p >= 80 ? "hi" : (p >= 50 ? "mid" : "low");
   el.innerHTML = state.history.map(h=>{
-    /* même ordre que la page de saisie : Quêtes, Quotidien, Féculents, Protéines, Micro — jokers à part */
+    /* même ordre que la page de saisie : Quêtes, Quotidien, Féculents, Protéines, Micro — jokers à part.
+       Le 4e élément est le poids dans la moyenne du badge : Renforcement ne compte que
+       pour moitié, car ses 2 pastilles seulement font basculer 0/50/100% sans nuance —
+       un seul oubli y pèserait sinon autant qu'un oubli sur 56 pastilles quotidiennes. */
     const cats = [];
-    if (h.stats.quests) cats.push(["Quêtes", h.stats.quests, "pct"]);
-    cats.push(["Quotidien", h.stats.daily, "pct"]);
-    /* Féculents : variété (types touchés), pas quantité — manger moins de
-       glucides une semaine n'est pas "mauvais", seule la diversité l'est */
+    if (h.stats.quests) cats.push(["Quêtes", h.stats.quests, "pct", 1]);
+    cats.push(["Quotidien", h.stats.daily, "pct", 1]);
     const hasVariety = !!h.stats.carbsVariety;
-    cats.push(["Féculents", hasVariety ? h.stats.carbsVariety : h.stats.carbs, hasVariety ? "variety" : "pct"]);
-    cats.push(["Protéines", h.stats.proteins, "pct"]);
-    if (h.stats.micro)  cats.push(["Variété micro", h.stats.micro, "pct"]);
-    if (h.stats.muscu)  cats.push(["Renforcement", h.stats.muscu, "pct"]);
+    cats.push(["Féculents", hasVariety ? h.stats.carbsVariety : h.stats.carbs, hasVariety ? "variety" : "pct", 1]);
+    cats.push(["Protéines", h.stats.proteins, "pct", 1]);
+    if (h.stats.micro)  cats.push(["Variété micro", h.stats.micro, "pct", 1]);
+    if (h.stats.muscu)  cats.push(["Renforcement", h.stats.muscu, "pct", .5]);
+    const isOpen = expandedWeeks.has(h.key);
     const rows = cats.map(([label,o,kind])=>{
       const p = pct(o);
       const valText = kind === "variety" ? `${o.done}/${o.tot} variés` : `${p}%`;
@@ -996,9 +1003,10 @@ function renderHistory(){
         : `${h.stats.jokers.done} au total`;
       jokRow = `<div class="bar-row"><span class="b-label">Jokers dépensés</span><span class="jok-detail">${detail}</span></div>`;
     }
-    /* badge de tendance : moyenne de tout sauf jokers */
-    const scored = cats.map(c=>pct(c[1]));
-    const avg = scored.length ? scored.reduce((a,b)=>a+b,0)/scored.length : 0;
+    /* badge de tendance : moyenne pondérée de tout sauf jokers */
+    let wsum = 0, wtot = 0;
+    for (const c of cats){ wsum += pct(c[1]) * c[3]; wtot += c[3]; }
+    const avg = wtot ? wsum / wtot : 0;
     const badge = avg >= 90 ? ["hi","🌟 Excellente"]
                 : avg >= 75 ? ["hi","👍 Bonne"]
                 : avg >= 50 ? ["mid","😐 Moyenne"]
@@ -1006,7 +1014,11 @@ function renderHistory(){
     const fmt5 = v => v==null ? "–" : v.toFixed(1).replace(".",",");
     const feel = h.stats.checkin && (h.stats.checkin.energy!=null || h.stats.checkin.mood!=null)
       ? `<div class="hist-feel">Ressenti moyen · ⚡ <b>${fmt5(h.stats.checkin.energy)}</b>/5 · 😊 <b>${fmt5(h.stats.checkin.mood)}</b>/5</div>` : "";
-    return `<div class="hist-item"><h3><span>${fmtWeek(h.key)}</span><span class="hist-badge ${badge[0]}">${badge[1]}</span></h3>${rows}${jokRow}${feel}</div>`;
+    const detail = isOpen ? `${rows}${jokRow}${feel}` : "";
+    return `<div class="hist-item"><h3 onclick="toggleWeek('${h.key}')">
+      <span>${fmtWeek(h.key)}</span>
+      <span class="hist-head-right"><span class="hist-badge ${badge[0]}">${badge[1]}</span><span class="hist-chevron">${isOpen ? "⌃" : "⌄"}</span></span>
+      </h3>${detail}</div>`;
   }).join("");
 }
 
@@ -1084,6 +1096,10 @@ function addItem(group){
   emEl.value = ""; nameEl.value = "";
   save(); renderAll(); toast(`${emoji} ${name} ajouté`);
 }
+function toggleWeek(key){
+  if (expandedWeeks.has(key)) expandedWeeks.delete(key); else expandedWeeks.add(key);
+  renderHistory();
+}
 function resetWeek(){
   if (!confirm("Remettre la semaine en cours à zéro ?")) return;
   state.week = freshWeek(state.config);
@@ -1105,6 +1121,7 @@ function toast(msg){
 
 // ---------- démarrage ----------
 state = load();
+if (state.history[0]) expandedWeeks.add(state.history[0].key);
 renderAll();
 
 // PWA : service worker (ignoré silencieusement hors HTTPS / en prévisualisation)
