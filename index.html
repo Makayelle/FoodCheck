@@ -448,13 +448,22 @@ nav button.active{color:var(--green)}
 
     <section class="card">
       <h2>Féculents · objectifs de la semaine</h2>
+      <div class="set-row target-row">
+        <span class="s-em">🎯</span>
+        <span class="s-name">Cible variété (types différents)</span>
+        <div class="stepper">
+          <button onclick="stepCarbsVarietyTarget(-1)" aria-label="moins">−</button>
+          <span class="val" id="carbsVarietyTargetVal">6</span>
+          <button onclick="stepCarbsVarietyTarget(1)" aria-label="plus">+</button>
+        </div>
+      </div>
       <div id="setCarbs"></div>
       <div class="add-row">
         <input class="i-em" id="addCarbEm" maxlength="4" placeholder="🌽">
         <input class="i-name" id="addCarbName" maxlength="24" placeholder="Nouvel aliment…">
         <button onclick="addItem('carbs')">+</button>
       </div>
-      <p class="hint">💡 Repère santé : légumineuses au moins 2 fois/semaine.</p>
+      <p class="hint">💡 La cible ci-dessus (évaluée dans l'Historique) reste fixe même si vous ajoutez des aliments — pas besoin de tous les toucher. Repère santé : légumineuses au moins 2 fois/semaine.</p>
     </section>
 
     <section class="card">
@@ -532,6 +541,7 @@ const GROUPS = { proteins:"proteinsPool", carbs:"carbsPool", micro:"microPool", 
 
 const DEFAULT_CONFIG = {
   proteinsTarget: 14,
+  carbsVarietyTarget: 6,
   proteins: [
     {id:"poulet",      name:"Poulet / volaille", emoji:"🍗", count:4},
     {id:"boeuf",       name:"Viande rouge (bœuf, porc…)", emoji:"🥩", count:2},
@@ -546,6 +556,7 @@ const DEFAULT_CONFIG = {
     {id:"pdt",     name:"Pommes de terre", emoji:"🥔", count:2},
     {id:"legum",   name:"Légumineuses", emoji:"🥜", count:3},
     {id:"avoine",  name:"Flocons d'avoine", emoji:"🥣", count:3},
+    {id:"pain",    name:"Pain / wrap", emoji:"🥖", count:3},
   ],
   micro: [
     {id:"noix",    name:"Noix / lin / chia / chanvre", emoji:"🌰", count:4},
@@ -665,12 +676,15 @@ function computeStats(week, config){
     return {done, tot};
   };
   const questsDone = QUESTS.filter(q => questProgress(week, q) >= 1).length;
-  /* Variété des féculents : nombre de types touchés au moins une fois,
-     pas la quantité — un féculent n'a pas de minimum PNNS, seule la
-     diversité compte (sauf légumineuses, déjà tirées par les quêtes). */
+  /* Variété des féculents : cible hebdo fixe (par défaut 6, réglable),
+     indépendante du nombre de types configurés — ajouter un aliment à la
+     liste (ex. pain) ne doit pas obliger à toucher plus de types pour
+     atteindre 100%. Toucher plus de types que la cible reste possible,
+     l'affichage plafonne simplement à 100%. */
+  const carbsVarietyTarget = config.carbsVarietyTarget || 6;
   const carbsItems = config.carbs.filter(it => it.count > 0);
   const carbsVarietyDone = carbsItems.filter(it => nDone(week.pools.carbs?.[it.id]) >= 1).length;
-  const carbsVariety = { done: carbsVarietyDone, tot: carbsItems.length };
+  const carbsVariety = { done: Math.min(carbsVarietyDone, carbsVarietyTarget), tot: carbsVarietyTarget };
   /* Protéines : la cible est un nombre hebdomadaire indépendant du nombre
      de types configurés (ajouter un aliment ne doit pas diluer le %) ;
      les plafonds par aliment (ex. viande rouge ≤2) restent des garde-fous. */
@@ -705,6 +719,14 @@ function migrate(s){
   // v18 → v19 : cible protéines découplée, par défaut 14 (2 portions/jour)
   if (typeof s.config.proteinsTarget !== "number"){
     s.config.proteinsTarget = 14;
+  }
+  // v22 → v23 : cible variété féculents découplée, par défaut 6
+  if (typeof s.config.carbsVarietyTarget !== "number"){
+    s.config.carbsVarietyTarget = 6;
+  }
+  // v22 → v23 : ajout du pain / wrap comme féculent à part entière
+  if (s.config.carbs && !s.config.carbs.find(it => it.id === "pain")){
+    s.config.carbs.push({id:"pain", name:"Pain / wrap", emoji:"🥖", count:3});
   }
   // v18 → v19 : scission oléagineux (noix/lin/chia vs autres) et huile (colza/noix vs olive/avocat) —
   // les ids "noix" et "huile" sont conservés tels quels (données existantes intactes), seuls
@@ -1024,6 +1046,7 @@ function renderHistory(){
 
 function renderSettings(){
   document.getElementById("proteinsTargetVal").textContent = state.config.proteinsTarget || 14;
+  document.getElementById("carbsVarietyTargetVal").textContent = state.config.carbsVarietyTarget || 6;
   for (const [group, elId] of [["proteins","setProteins"],["carbs","setCarbs"],["micro","setMicro"],["jokers","setJokers"],["muscu","setMuscu"]]){
     const el = document.getElementById(elId);
     el.innerHTML = state.config[group].map((it,idx)=>`
@@ -1066,6 +1089,10 @@ function tapPool(group, id, k){
 function stepProteinsTarget(delta){
   state.config.proteinsTarget = Math.max(7, Math.min(21, (state.config.proteinsTarget || 14) + delta));
   save(); renderSettings(); renderPills();
+}
+function stepCarbsVarietyTarget(delta){
+  state.config.carbsVarietyTarget = Math.max(3, Math.min(10, (state.config.carbsVarietyTarget || 6) + delta));
+  save(); renderSettings();
 }
 function stepItem(group, idx, delta){
   const it = state.config[group][idx];
