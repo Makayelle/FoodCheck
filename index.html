@@ -219,6 +219,7 @@ h2{
 .bar i.low{background:#C4553F}
 .bar i.jok{background:#D9C08F}
 .jok-detail{flex:1;font-size:.78rem;font-weight:800;color:var(--amber)}
+.split-detail{flex:1;font-size:.78rem;font-weight:800;color:var(--ink-soft)}
 .bar-row .b-val{width:38px;text-align:right;font-weight:800}
 .bar-row .b-val.variety{width:auto;white-space:nowrap;font-size:.68rem}
 .empty{
@@ -334,14 +335,14 @@ nav button.active{color:var(--green)}
     <section class="card">
       <span class="progress-pill" id="carbsPill"></span>
       <h2>Féculents de la semaine</h2>
-      <p class="sub">Une pastille = une portion. Les légumineuses remplacent un féculent.</p>
+      <p class="sub">Une pastille = une portion. Les légumineuses comptent comme féculent et pour ½ protéine.</p>
       <div id="carbsPool"></div>
     </section>
 
     <section class="card">
       <span class="progress-pill" id="proteinsPill"></span>
       <h2>Protéines de la semaine</h2>
-      <p class="sub">Une pastille = un repas avec cette protéine.</p>
+      <p class="sub">Une pastille = un repas avec cette protéine. Les légumineuses (Féculents) comptent pour ½.</p>
       <div id="proteinsPool"></div>
     </section>
 
@@ -381,6 +382,7 @@ nav button.active{color:var(--green)}
         <div class="pnns-row"><span class="pnns-em">🐟</span><div><b>Poisson</b><br>2 fois par semaine, dont 1 poisson gras (sardine, maquereau, saumon) pour les oméga-3 et la vitamine D.</div></div>
         <div class="pnns-row"><span class="pnns-em">🥩</span><div><b>Viande</b><br>Viande rouge (bœuf, porc, agneau, veau) limitée à ~500 g/semaine au total · charcuterie ≤150 g/semaine. Volaille et œufs sans limite particulière.</div></div>
         <div class="pnns-row"><span class="pnns-em">🥜</span><div><b>Légumineuses</b><br>Au moins 2 fois par semaine (lentilles, pois chiches, haricots…) — protéines végétales et fibres.</div></div>
+        <div class="pnns-row"><span class="pnns-em">🌱</span><div><b>Protéines végétales</b><br>Viser un équilibre proche de 50 % animal / 50 % végétal (en France on est plutôt à 65-70 % animal). Sources : tofu, tempeh, seitan, légumineuses. Astuce : associer une céréale et une légumineuse dans le même repas (riz + lentilles, semoule + pois chiches) donne des protéines aussi complètes que la viande. Dans l'app, une portion de légumineuses compte pour ½ protéine.</div></div>
         <div class="pnns-row"><span class="pnns-em">🍚</span><div><b>Féculents</b><br>À chaque repas selon l'appétit, sans quantité minimale imposée. Privilégier les versions complètes pour les fibres.</div></div>
         <div class="pnns-row"><span class="pnns-em">🥛</span><div><b>Produits laitiers</b><br>2 par jour (lait, yaourt ou fromage), à alterner.</div></div>
         <div class="pnns-row"><span class="pnns-em">🌻</span><div><b>Matières grasses</b><br>Varier les sources, privilégier les huiles végétales (colza, olive, noix) plutôt que le beurre en excès.</div></div>
@@ -443,7 +445,7 @@ nav button.active{color:var(--green)}
         <input class="i-name" id="addProtName" maxlength="24" placeholder="Nouvel aliment…">
         <button onclick="addItem('proteins')">+</button>
       </div>
-      <p class="hint">💡 Repère santé : 2 portions/jour ≈ 14/semaine (cible ci-dessus) · viande rouge ≤ 500 g/semaine (≈ 2-3 portions) · poisson 2 fois/semaine dont 1 poisson gras.</p>
+      <p class="hint">💡 Repère santé : 2 portions/jour ≈ 14/semaine (cible ci-dessus, légumineuses comptées pour ½) · viser ~50 % de protéines végétales · viande rouge ≤ 500 g/semaine (≈ 2-3 portions) · poisson 2 fois/semaine dont 1 poisson gras.</p>
     </section>
 
     <section class="card">
@@ -522,7 +524,7 @@ const DAYS = ["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"]
 /* Noms courts pour l'affichage en carte (le nom complet reste dans les Réglages) */
 const SHORT_NAMES = {
   poulet:"Poulet / volaille", boeuf:"Viande rouge", oeufs:"Œufs",
-  poissongras:"Poisson gras", poisson:"Poisson autre",
+  poissongras:"Poisson gras", poisson:"Poisson autre", vegetal:"Protéine végétale",
   riz:"Riz", pates:"Pâtes", semoule:"Semoule", pdt:"Pommes de terre", legum:"Légumineuses",
   noix:"Noix / lin / chia", autresoleagineux:"Autres oléagineux", feuillu:"Légume feuillu", colore:"Fruit/lég. coloré",
   agrume:"Agrume ou kiwi", huile:"Huile colza/noix", huileolive:"Huile olive/avocat", complet:"Féculent complet",
@@ -548,6 +550,7 @@ const DEFAULT_CONFIG = {
     {id:"oeufs",       name:"Œufs", emoji:"🥚", count:4},
     {id:"poissongras", name:"Poisson gras (sardine, maquereau, saumon…)", emoji:"🐟", count:1},
     {id:"poisson",     name:"Poisson blanc / autre", emoji:"🐠", count:2},
+    {id:"vegetal",     name:"Protéine végétale (tofu, tempeh, seitan…)", emoji:"🌱", count:2},
   ],
   carbs: [
     {id:"riz",     name:"Riz", emoji:"🍚", count:4},
@@ -690,7 +693,16 @@ function computeStats(week, config){
      les plafonds par aliment (ex. viande rouge ≤2) restent des garde-fous. */
   const proteinsTarget = config.proteinsTarget || 14;
   const proteinsRaw = pool("proteins");
-  const proteins = { done: Math.min(proteinsRaw.done, proteinsTarget), tot: proteinsTarget };
+  /* Légumineuses (pool Féculents) : vraies protéines mais ~4× moins denses
+     qu'une portion de viande → comptent pour ½ dans la cible, sans double saisie */
+  const legumDone = nDone(week.pools.carbs?.legum);
+  const proteins = { done: Math.min(proteinsRaw.done + legumDone * 0.5, proteinsTarget), tot: proteinsTarget };
+  /* Origine des protéines (informatif, repère PNNS ~50/50) : aliments standard
+     uniquement — tofu/tempeh/seitan poids plein, légumineuses poids ½ */
+  const P = week.pools.proteins || {};
+  const animalN = ["poulet","boeuf","oeufs","poissongras","poisson"].reduce((a,id)=>a+nDone(P[id]),0);
+  const vegetalN = nDone(P.vegetal) + legumDone * 0.5;
+  const proteinSplit = { animal: animalN, vegetal: vegetalN };
   const avg = field => {
     const vals = [];
     for (let i=0;i<7;i++){
@@ -704,6 +716,7 @@ function computeStats(week, config){
     proteins,
     carbs: pool("carbs"),
     carbsVariety,
+    proteinSplit,
     micro: pool("micro"),
     jokers: pool("jokers"),
     muscu: pool("muscu"),
@@ -716,6 +729,26 @@ function computeStats(week, config){
 }
 
 function migrate(s){
+  // v23 → v24 : pastille "Protéine végétale" officielle ; une entrée créée à la main
+  // (tofu, tempeh, seitan…) est fusionnée dedans, avec ses pastilles déjà cochées
+  if (s.config.proteins && !s.config.proteins.find(it => it.id === "vegetal")){
+    const std = ["poulet","boeuf","oeufs","poissongras","poisson"];
+    const ci = s.config.proteins.findIndex(it => !std.includes(it.id) && /tofu|tempeh|seitan|v[ée]g[ée]tal/i.test(it.name));
+    let count = 2, arr = null;
+    if (ci !== -1){
+      const custom = s.config.proteins[ci];
+      count = Math.max(2, custom.count || 2);
+      arr = s.week?.pools?.proteins?.[custom.id] || null;
+      if (arr) delete s.week.pools.proteins[custom.id];
+      s.config.proteins.splice(ci, 1);
+    }
+    s.config.proteins.push({id:"vegetal", name:"Protéine végétale (tofu, tempeh, seitan…)", emoji:"🌱", count});
+    if (s.week?.pools?.proteins){
+      arr = arr ? arr.slice(0, count) : [];
+      while (arr.length < count) arr.push(false);
+      s.week.pools.proteins.vegetal = arr;
+    }
+  }
   // v18 → v19 : cible protéines découplée, par défaut 14 (2 portions/jour)
   if (typeof s.config.proteinsTarget !== "number"){
     s.config.proteinsTarget = 14;
@@ -976,11 +1009,12 @@ function renderQuests(){
   }).join("");
 }
 
+const fmtHalf = n => Number.isInteger(n) ? String(n) : n.toFixed(1).replace(".",",");
 function renderPills(){
   const s = computeStats(state.week, state.config);
   document.getElementById("dailyPill").textContent    = `${s.daily.done}/${s.daily.tot}`;
   document.getElementById("carbsPill").textContent    = `${s.carbs.done}/${s.carbs.tot}`;
-  document.getElementById("proteinsPill").textContent = `${s.proteins.done}/${s.proteins.tot}`;
+  document.getElementById("proteinsPill").textContent = `${fmtHalf(s.proteins.done)}/${s.proteins.tot}`;
   document.getElementById("microPill").textContent    = `${s.micro.done}/${s.micro.tot}`;
   document.getElementById("jokersPill").textContent   = `${s.jokers.done}/${s.jokers.tot} dépensés`;
   document.getElementById("questPill").textContent    = `${s.quests.done}/${s.quests.tot} ✓`;
@@ -1015,6 +1049,13 @@ function renderHistory(){
       <span class="bar"><i class="${barClass(p)}" style="width:${p}%"></i></span>
       <span class="b-val${kind==="variety" ? " variety" : ""}">${valText}</span></div>`;
     }).join("");
+    /* origine des protéines : constat informatif, non noté (repère ~50/50) */
+    let splitRow = "";
+    const sp = h.stats.proteinSplit;
+    if (sp && (sp.animal + sp.vegetal) > 0){
+      const vp = Math.round(100 * sp.vegetal / (sp.animal + sp.vegetal));
+      splitRow = `<div class="bar-row"><span class="b-label">Origine protéines</span><span class="split-detail">🌱 ${vp} % · 🥩 ${100 - vp} %</span></div>`;
+    }
     /* jokers : détail consommé (1 🍷 · 2 🍰), pas de pourcentage */
     let jokRow = "";
     if (h.stats.jokers){
@@ -1036,7 +1077,7 @@ function renderHistory(){
     const fmt5 = v => v==null ? "–" : v.toFixed(1).replace(".",",");
     const feel = h.stats.checkin && (h.stats.checkin.energy!=null || h.stats.checkin.mood!=null)
       ? `<div class="hist-feel">Ressenti moyen · ⚡ <b>${fmt5(h.stats.checkin.energy)}</b>/5 · 😊 <b>${fmt5(h.stats.checkin.mood)}</b>/5</div>` : "";
-    const detail = isOpen ? `${rows}${jokRow}${feel}` : "";
+    const detail = isOpen ? `${rows}${splitRow}${jokRow}${feel}` : "";
     return `<div class="hist-item"><h3 onclick="toggleWeek('${h.key}')">
       <span>${fmtWeek(h.key)}</span>
       <span class="hist-head-right"><span class="hist-badge ${badge[0]}">${badge[1]}</span><span class="hist-chevron">${isOpen ? "⌃" : "⌄"}</span></span>
