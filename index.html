@@ -261,6 +261,12 @@ h2{
   padding:0 14px;font-weight:800;font-family:inherit;cursor:pointer;
 }
 .hint{font-size:.75rem;color:var(--ink-soft);margin-top:8px;line-height:1.5}
+.toggle-row{display:flex;align-items:center;gap:10px;padding:8px 0;font-weight:700;font-size:.88rem;cursor:pointer}
+.toggle-row input{width:20px;height:20px;accent-color:var(--green);flex:none}
+.soft-btn{
+  width:100%;margin-top:8px;border:1.5px solid var(--line);background:var(--green-soft);color:var(--green);
+  border-radius:10px;padding:10px;font-weight:800;font-family:inherit;cursor:pointer;
+}
 .danger-zone{margin-top:4px}
 .danger-zone button{
   width:100%;border:1.5px solid #E4C9C4;background:#FBF3F2;color:#B9432F;
@@ -428,24 +434,14 @@ nav button.active{color:var(--green)}
   <!-- ================= VUE RÉGLAGES ================= -->
   <div class="view" id="view-settings">
     <section class="card">
-      <h2>Protéines · objectifs de la semaine</h2>
-      <p class="sub">Nombre de pastilles disponibles chaque semaine</p>
-      <div class="set-row target-row">
-        <span class="s-em">🎯</span>
-        <span class="s-name">Cible hebdo (toutes sources)</span>
-        <div class="stepper">
-          <button onclick="stepProteinsTarget(-1)" aria-label="moins">−</button>
-          <span class="val" id="proteinsTargetVal">14</span>
-          <button onclick="stepProteinsTarget(1)" aria-label="plus">+</button>
-        </div>
-      </div>
-      <div id="setProteins"></div>
+      <h2>💪 Renforcement musculaire</h2>
+      <div id="setMuscu"></div>
       <div class="add-row">
-        <input class="i-em" id="addProtEm" maxlength="4" placeholder="🍤">
-        <input class="i-name" id="addProtName" maxlength="24" placeholder="Nouvel aliment…">
-        <button onclick="addItem('proteins')">+</button>
+        <input class="i-em" id="addMuscuEm" maxlength="4" placeholder="🏋️">
+        <input class="i-name" id="addMuscuName" maxlength="24" placeholder="Nouveau type de séance…">
+        <button onclick="addItem('muscu')">+</button>
       </div>
-      <p class="hint">💡 Repère santé : 2 portions/jour ≈ 14/semaine (cible ci-dessus, légumineuses comptées pour ½) · viser ~50 % de protéines végétales · viande rouge ≤ 500 g/semaine (≈ 2-3 portions) · poisson 2 fois/semaine dont 1 poisson gras.</p>
+      <p class="hint">💡 Repère OMS : 2 séances/semaine touchant les grands groupes musculaires — squats, pompes, gainage, charges, ou bricolage/jardinage physique.</p>
     </section>
 
     <section class="card">
@@ -466,6 +462,27 @@ nav button.active{color:var(--green)}
         <button onclick="addItem('carbs')">+</button>
       </div>
       <p class="hint">💡 La cible ci-dessus (évaluée dans l'Historique) reste fixe même si vous ajoutez des aliments — pas besoin de tous les toucher. Repère santé : légumineuses au moins 2 fois/semaine.</p>
+    </section>
+
+    <section class="card">
+      <h2>Protéines · objectifs de la semaine</h2>
+      <p class="sub">Nombre de pastilles disponibles chaque semaine</p>
+      <div class="set-row target-row">
+        <span class="s-em">🎯</span>
+        <span class="s-name">Cible hebdo (toutes sources)</span>
+        <div class="stepper">
+          <button onclick="stepProteinsTarget(-1)" aria-label="moins">−</button>
+          <span class="val" id="proteinsTargetVal">14</span>
+          <button onclick="stepProteinsTarget(1)" aria-label="plus">+</button>
+        </div>
+      </div>
+      <div id="setProteins"></div>
+      <div class="add-row">
+        <input class="i-em" id="addProtEm" maxlength="4" placeholder="🍤">
+        <input class="i-name" id="addProtName" maxlength="24" placeholder="Nouvel aliment…">
+        <button onclick="addItem('proteins')">+</button>
+      </div>
+      <p class="hint">💡 Repère santé : 2 portions/jour ≈ 14/semaine (cible ci-dessus, légumineuses comptées pour ½) · viser ~50 % de protéines végétales · viande rouge ≤ 500 g/semaine (≈ 2-3 portions) · poisson 2 fois/semaine dont 1 poisson gras.</p>
     </section>
 
     <section class="card">
@@ -491,14 +508,14 @@ nav button.active{color:var(--green)}
     </section>
 
     <section class="card">
-      <h2>💪 Renforcement musculaire</h2>
-      <div id="setMuscu"></div>
-      <div class="add-row">
-        <input class="i-em" id="addMuscuEm" maxlength="4" placeholder="🏋️">
-        <input class="i-name" id="addMuscuName" maxlength="24" placeholder="Nouveau type de séance…">
-        <button onclick="addItem('muscu')">+</button>
-      </div>
-      <p class="hint">💡 Repère OMS : 2 séances/semaine touchant les grands groupes musculaires — squats, pompes, gainage, charges, ou bricolage/jardinage physique.</p>
+      <h2>♻️ Quantités recommandées</h2>
+      <p class="sub">Les pastilles retouchées en cours de semaine peuvent repartir des valeurs conseillées</p>
+      <label class="toggle-row">
+        <input type="checkbox" id="autoResetCounts" onchange="toggleAutoReset(this.checked)">
+        <span>Repartir des quantités recommandées chaque lundi</span>
+      </label>
+      <button class="soft-btn" onclick="restoreRecommended()">Rétablir maintenant</button>
+      <p class="hint">💡 Concerne le nombre de pastilles des aliments proposés par défaut. Vos aliments ajoutés à la main et vos cibles (protéines, variété) ne sont pas modifiés, et les pastilles déjà cochées sont conservées.</p>
     </section>
 
     <section class="card danger-zone">
@@ -543,6 +560,7 @@ const GROUPS = { proteins:"proteinsPool", carbs:"carbsPool", micro:"microPool", 
 
 const DEFAULT_CONFIG = {
   proteinsTarget: 14,
+  autoResetCounts: false,
   carbsVarietyTarget: 6,
   proteins: [
     {id:"poulet",      name:"Poulet / volaille", emoji:"🍗", count:4},
@@ -729,6 +747,8 @@ function computeStats(week, config){
 }
 
 function migrate(s){
+  // v25 → v26 : option "repartir des quantités recommandées chaque lundi" (désactivée par défaut)
+  if (typeof s.config.autoResetCounts !== "boolean") s.config.autoResetCounts = false;
   // v23 → v24 : pastille "Protéine végétale" officielle ; une entrée créée à la main
   // (tofu, tempeh, seitan…) est fusionnée dedans, avec ses pastilles déjà cochées
   if (s.config.proteins && !s.config.proteins.find(it => it.id === "vegetal")){
@@ -902,6 +922,15 @@ function migrate(s){
   return s;
 }
 
+/* Remet le nombre de pastilles des aliments par défaut à la valeur conseillée.
+   Les aliments ajoutés à la main et les cibles ne sont pas touchés. */
+function applyRecommendedCounts(config){
+  for (const g of Object.keys(GROUPS))
+    for (const it of config[g] || []){
+      const def = (DEFAULT_CONFIG[g] || []).find(d => d.id === it.id);
+      if (def) it.count = def.count;
+    }
+}
 function load(){
   let s = null;
   try { s = JSON.parse(localStorage.getItem(STORE_KEY)); } catch(e){}
@@ -916,6 +945,7 @@ function load(){
     const stats = computeStats(s.week, s.config);
     s.history.unshift({ key: s.week.key, stats });
     if (s.history.length > 26) s.history.length = 26; // ~6 mois
+    if (s.config.autoResetCounts) applyRecommendedCounts(s.config);
     s.week = freshWeek(s.config);
     save(s);
   }
@@ -1086,6 +1116,7 @@ function renderHistory(){
 }
 
 function renderSettings(){
+  document.getElementById("autoResetCounts").checked = !!state.config.autoResetCounts;
   document.getElementById("proteinsTargetVal").textContent = state.config.proteinsTarget || 14;
   document.getElementById("carbsVarietyTargetVal").textContent = state.config.carbsVarietyTarget || 6;
   for (const [group, elId] of [["proteins","setProteins"],["carbs","setCarbs"],["micro","setMicro"],["jokers","setJokers"],["muscu","setMuscu"]]){
@@ -1163,6 +1194,22 @@ function addItem(group){
   state.week.pools[group][id] = [false];
   emEl.value = ""; nameEl.value = "";
   save(); renderAll(); toast(`${emoji} ${name} ajouté`);
+}
+function toggleAutoReset(on){
+  state.config.autoResetCounts = !!on;
+  save();
+  toast(on ? "Chaque lundi repartira des quantités recommandées" : "Les quantités seront conservées d'une semaine à l'autre");
+}
+function restoreRecommended(){
+  if (!confirm("Rétablir le nombre de pastilles recommandé ? Les pastilles déjà cochées sont conservées.")) return;
+  applyRecommendedCounts(state.config);
+  for (const g of Object.keys(GROUPS))
+    for (const it of state.config[g] || []){
+      const arr = (state.week.pools[g][it.id] || []).slice(0, it.count);
+      while (arr.length < it.count) arr.push(false);
+      state.week.pools[g][it.id] = arr;
+    }
+  save(); renderAll(); toast("Quantités recommandées rétablies");
 }
 function toggleWeek(key){
   if (expandedWeeks.has(key)) expandedWeeks.delete(key); else expandedWeeks.add(key);
