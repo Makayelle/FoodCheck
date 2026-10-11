@@ -1,6 +1,6 @@
 /* Service worker — permet à l'app de fonctionner hors-ligne.
    Stratégie : cache d'abord, réseau en secours. */
-const CACHE = "nutri-suivi-v24";
+const CACHE = "nutri-suivi-v26";
 const ASSETS = [
   "./",
   "./index.html",
