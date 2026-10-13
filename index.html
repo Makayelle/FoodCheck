@@ -515,7 +515,7 @@ nav button.active{color:var(--green)}
         <span>Repartir des quantités recommandées chaque lundi</span>
       </label>
       <button class="soft-btn" onclick="restoreRecommended()">Rétablir maintenant</button>
-      <p class="hint">💡 Concerne le nombre de pastilles des aliments proposés par défaut. Vos aliments ajoutés à la main et vos cibles (protéines, variété) ne sont pas modifiés, et les pastilles déjà cochées sont conservées.</p>
+      <p class="hint">💡 Concerne le nombre de pastilles des aliments proposés par défaut. Vos aliments ajoutés à la main, vos cibles (protéines, variété) et vos jokers (budget personnel) ne sont pas modifiés, et les pastilles déjà cochées sont conservées.</p>
     </section>
 
     <section class="card danger-zone">
@@ -923,13 +923,17 @@ function migrate(s){
 }
 
 /* Remet le nombre de pastilles des aliments par défaut à la valeur conseillée.
-   Les aliments ajoutés à la main et les cibles ne sont pas touchés. */
+   Les aliments ajoutés à la main, les cibles et les jokers ne sont pas touchés :
+   un joker est un budget personnel (plafond), pas une quantité recommandée. */
+const RESET_EXCLUDED = ["jokers"];
 function applyRecommendedCounts(config){
-  for (const g of Object.keys(GROUPS))
+  for (const g of Object.keys(GROUPS)){
+    if (RESET_EXCLUDED.includes(g)) continue;
     for (const it of config[g] || []){
       const def = (DEFAULT_CONFIG[g] || []).find(d => d.id === it.id);
       if (def) it.count = def.count;
     }
+  }
 }
 function load(){
   let s = null;
