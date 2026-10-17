@@ -30,7 +30,7 @@ index.html              # toute l'app : HTML + CSS + JS inline (~1250 lignes)
 manifest.json           # manifest PWA (name/short_name "FoodCheck", icônes maskable)
 sw.js                   # service worker, cache-first, constante CACHE versionnée
 icon-192.png, icon-512.png  # icônes plein cadre (fond vert jusqu'aux bords, masques Android)
-GUIDE-MISE-EN-LIGNE.md  # guide utilisateur historique
+scripts/validate.mjs    # validation avant commit (voir plus bas)
 ```
 
 Seule ressource externe : Google Fonts (Fredoka, Nunito), mise en cache par le service worker.
@@ -101,7 +101,7 @@ Choix nutritionnels assumés à ne pas défaire :
 
 1. **Les ids sont éternels.** Ne jamais renommer un `id` d'aliment, de groupe ou de quête : il indexe les données de l'utilisateur. Pour changer un libellé, modifier `name` (et `SHORT_NAMES` pour l'affichage en carte).
 2. **Toute évolution de structure passe par `migrate(s)`.** Les étapes doivent être idempotentes, commentées avec la version (`// v27 → v28 : …`), et **préserver les pastilles déjà cochées** (redimensionner les tableaux en tronquant/complétant, ne jamais les recréer vides). Une nouvelle entrée par défaut doit aussi être ajoutée à `DEFAULT_CONFIG` et à `SHORT_NAMES`.
-3. **Bumper `CACHE` dans `sw.js` à chaque déploiement** (`nutri-suivi-vN`, actuellement v27). Sans ça, la PWA installée continue de servir l'ancienne version hors-ligne.
+3. **Bumper `CACHE` dans `sw.js` à chaque déploiement** (`nutri-suivi-vN`, actuellement v28). Sans ça, la PWA installée continue de servir l'ancienne version hors-ligne.
 4. **Dates en local.** Utiliser `weekKey()` / `isoLocal()`, jamais `toISOString()` : en France, lundi 00:00 = dimanche 22:00 UTC.
 5. **Échapper tout texte saisi** par l'utilisateur avec `esc()` avant de l'injecter en HTML.
 6. **Emojis** : éviter les emojis Unicode 13+ (🫒 🫘 …), mal affichés sur certains appareils. Pas de doublon d'emoji dans un même pool.
@@ -113,13 +113,22 @@ Choix nutritionnels assumés à ne pas défaire :
 
 Le rendu visuel a déjà été cassé par des bugs que la seule logique ne détectait pas. Lancer systématiquement :
 
-1. **Syntaxe JS** : extraire le `<script>` de `index.html` et lancer `node --check`.
-2. **Audit HTML/CSS** : sélecteurs CSS dupliqués, `getElementById("…")` sans élément correspondant, `id` HTML dupliqués, handlers `onclick`/`onchange` sans fonction définie, cibles de `switchView()` sans vue.
-3. **Tests logiques** en `TZ=Europe/Paris` : exécuter la partie données du script (avant `// ---------- rendu ----------`) sous Node avec localStorage simulé, et vérifier les calculs concernés par le changement.
-4. **Test de migration** : reconstruire un état sauvegardé réaliste de la version précédente (config + semaine avec des pastilles cochées), le passer dans `migrate()`, vérifier que rien n'est perdu.
-5. `manifest.json` doit rester un JSON valide.
+```
+node scripts/validate.mjs            # statique + logique + migration (~1 s)
+node scripts/validate.mjs --render   # + rendu Chromium/Playwright des 4 vues
+```
 
-Il est recommandé de regrouper ces contrôles dans un script (`scripts/validate.py` ou `.mjs`) si ce n'est pas déjà fait. La validation finale reste un test sur le téléphone.
+Sortie compacte : une ligne par échec, puis `OK : N contrôles (CACHE vN)`. Code de sortie 1 en cas d'échec. **Ne pas relire `index.html` en entier pour valider : se fier au script** et ne lire que les zones signalées.
+
+Ce que couvre le script :
+1. **Syntaxe JS** du `<script>` inline.
+2. **Audit HTML/CSS** : sélecteurs CSS dupliqués, `id` dupliqués, `getElementById` sans élément, handlers sans fonction, `switchView()` sans vue, emojis Unicode 13+, doublons d'emoji, `manifest.json` valide.
+3. **CACHE** : échoue si `index.html`/`manifest.json`/icônes diffèrent de `origin/main` sans bump de `CACHE` dans `sw.js`.
+4. **Logique** (`TZ=Europe/Paris`, localStorage simulé, partie données avant `// ---------- rendu ----------`) : dates locales, quêtes (13, poids = 1), protéines (½ légumineuses, cible découplée), variété féculents, Oméga-3, B12, jokers, check-in, quantités recommandées.
+5. **Migration** : état récent avec pastilles cochées conservé et migration idempotente, ancien format compteurs, archivage du lundi.
+6. `--render` : aucun débordement horizontal ni erreur JS, état sauvegardé après des clics.
+
+Quand un changement touche les calculs ou le modèle, **ajouter le test correspondant dans le script** (un `check(...)` de plus) plutôt que d'écrire un test jetable. La validation finale reste un test sur le téléphone.
 
 ## Déploiement
 
