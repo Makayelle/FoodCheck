@@ -4,6 +4,9 @@ Guide de travail pour Claude Code sur ce dépôt. À lire avant toute modificati
 
 ## Le projet en bref
 
+Pour reprendre après une pause : lire ce fichier, puis le haut de `CHANGELOG.md`.
+
+
 FoodCheck est une PWA personnelle de suivi nutritionnel hebdomadaire, utilisée sur un téléphone Android. Elle remplace une affiche papier collée sur le frigo où l'on barrait au feutre ce qu'on avait mangé : ce qui n'est pas encore barré oriente les choix en cuisine.
 
 - Hébergement : GitHub Pages, branche `main`, dossier racine → `https://makayelle.github.io/foodcheck/`
@@ -31,6 +34,7 @@ manifest.json           # manifest PWA (name/short_name "FoodCheck", icônes mas
 sw.js                   # service worker, cache-first, constante CACHE versionnée
 icon-192.png, icon-512.png  # icônes plein cadre (fond vert jusqu'aux bords, masques Android)
 scripts/validate.mjs    # validation avant commit (voir plus bas)
+CHANGELOG.md            # historique des versions, du « pourquoi » et des choix écartés
 ```
 
 Seule ressource externe : Google Fonts (Fredoka, Nunito), mise en cache par le service worker.
@@ -101,7 +105,7 @@ Choix nutritionnels assumés à ne pas défaire :
 
 1. **Les ids sont éternels.** Ne jamais renommer un `id` d'aliment, de groupe ou de quête : il indexe les données de l'utilisateur. Pour changer un libellé, modifier `name` (et `SHORT_NAMES` pour l'affichage en carte).
 2. **Toute évolution de structure passe par `migrate(s)`.** Les étapes doivent être idempotentes, commentées avec la version (`// v27 → v28 : …`), et **préserver les pastilles déjà cochées** (redimensionner les tableaux en tronquant/complétant, ne jamais les recréer vides). Une nouvelle entrée par défaut doit aussi être ajoutée à `DEFAULT_CONFIG` et à `SHORT_NAMES`.
-3. **Bumper `CACHE` dans `sw.js` à chaque déploiement** (`nutri-suivi-vN`, actuellement v29). Sans ça, la PWA installée continue de servir l'ancienne version hors-ligne.
+3. **Bumper `CACHE` dans `sw.js` à chaque déploiement** (`nutri-suivi-vN`, actuellement v29). Sans ça, la PWA installée continue de servir l'ancienne version hors-ligne. **Ajouter l'entrée correspondante en tête de `CHANGELOG.md`** (quoi, pourquoi, ce qui est préservé) ; noter aussi les idées écartées dans « Décisions écartées ».
 4. **Dates en local.** Utiliser `weekKey()` / `isoLocal()`, jamais `toISOString()` : en France, lundi 00:00 = dimanche 22:00 UTC.
 5. **Échapper tout texte saisi** par l'utilisateur avec `esc()` avant de l'injecter en HTML.
 6. **Emojis** : éviter les emojis Unicode 13+ (🫒 🫘 …), mal affichés sur certains appareils. Pas de doublon d'emoji dans un même pool.
