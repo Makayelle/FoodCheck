@@ -58,6 +58,11 @@ check("switchView sans vue", () => {
   const miss = [...new Set([...html.matchAll(/switchView\(\s*['"]([^'"]+)/g)].map(m => m[1]))].filter(v => !allIds.has("view-" + v));
   assert.equal(miss.length, 0, miss.join(", "));
 });
+check("tailles de police : échelle --fs-* uniquement", () => {
+  const css = html.match(/<style>([\s\S]*?)<\/style>/)[1];
+  const raw = [...css.matchAll(/font-size:\s*([^;}]+)/g)].map(m => m[1].trim()).filter(v => !/^var\(--fs-[\w]+\)$/.test(v) && v !== "16px");
+  assert.equal(raw.length, 0, raw.join(", "));
+});
 check("manifest.json valide", () => { JSON.parse(read("manifest.json")); });
 const cacheVer = (read("sw.js").match(/const CACHE = "nutri-suivi-v(\d+)"/) || [])[1];
 check("CACHE sw.js lisible", () => assert.ok(cacheVer, "constante CACHE introuvable"));
@@ -224,6 +229,9 @@ if (process.argv.includes("--render")) {
     }
     await p.evaluate(() => switchView("week"));
     for (const el of (await p.$$("#view-week [onclick]")).slice(0, 40)) await el.click({ timeout: 300 }).catch(() => {});
+    const small = await p.evaluate(() => [...document.querySelectorAll("#view-week button, header button, nav button")]
+      .map(e => e.getBoundingClientRect()).filter(r => r.width && (r.width < 24 || r.height < 24)).length);
+    if (small) fails.push(`✗ rendu : ${small} zone(s) tactile(s) < 24 px (WCAG 2.2)`); else passed++;
     const saved = await p.evaluate(k => localStorage.getItem(k), "nutri-suivi-v1");
     if (!saved) fails.push("✗ rendu : aucun état sauvegardé après clics"); else passed++;
     if (errs.length) fails.push("✗ rendu : erreurs JS — " + errs.join(" | ")); else passed++;
