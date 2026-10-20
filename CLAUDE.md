@@ -39,7 +39,7 @@ Seule ressource externe : Google Fonts (Fredoka, Nunito), mise en cache par le s
 
 | Vue | Accès | Contenu |
 |---|---|---|
-| `view-week` | onglet Semaine | Quêtes, Chaque jour (grille 2×4 + check-in ⚡😊), Renforcement, Féculents, Protéines, Variété micro, Jokers, teaser "Repères rapides" |
+| `view-week` | onglet Semaine (s'ouvre défilée sur **aujourd'hui**, `scrollToToday()`) | Quêtes, Chaque jour (grille 2×4 + check-in ⚡😊), Renforcement, Féculents, Protéines, Variété micro, Jokers, teaser "Repères rapides" |
 | `view-history` | onglet Historique | Une carte par semaine archivée, repliable ; la plus récente dépliée au démarrage |
 | `view-settings` | onglet Réglages | Sections **dans le même ordre que la vue Semaine** : Renforcement, Féculents, Protéines, Variété micro, Jokers, puis Quantités recommandées, puis Semaine en cours |
 | `view-info` | icône ℹ️ de l'en-tête (pas d'onglet) | Repères PNNS/OMS, repères de portion, liens mangerbouger.fr / santepubliquefrance.fr |
@@ -101,12 +101,12 @@ Choix nutritionnels assumés à ne pas défaire :
 
 1. **Les ids sont éternels.** Ne jamais renommer un `id` d'aliment, de groupe ou de quête : il indexe les données de l'utilisateur. Pour changer un libellé, modifier `name` (et `SHORT_NAMES` pour l'affichage en carte).
 2. **Toute évolution de structure passe par `migrate(s)`.** Les étapes doivent être idempotentes, commentées avec la version (`// v27 → v28 : …`), et **préserver les pastilles déjà cochées** (redimensionner les tableaux en tronquant/complétant, ne jamais les recréer vides). Une nouvelle entrée par défaut doit aussi être ajoutée à `DEFAULT_CONFIG` et à `SHORT_NAMES`.
-3. **Bumper `CACHE` dans `sw.js` à chaque déploiement** (`nutri-suivi-vN`, actuellement v28). Sans ça, la PWA installée continue de servir l'ancienne version hors-ligne.
+3. **Bumper `CACHE` dans `sw.js` à chaque déploiement** (`nutri-suivi-vN`, actuellement v29). Sans ça, la PWA installée continue de servir l'ancienne version hors-ligne.
 4. **Dates en local.** Utiliser `weekKey()` / `isoLocal()`, jamais `toISOString()` : en France, lundi 00:00 = dimanche 22:00 UTC.
 5. **Échapper tout texte saisi** par l'utilisateur avec `esc()` avant de l'injecter en HTML.
 6. **Emojis** : éviter les emojis Unicode 13+ (🫒 🫘 …), mal affichés sur certains appareils. Pas de doublon d'emoji dans un même pool.
 7. **Ordre des sections** : Réglages suit toujours l'ordre de la vue Semaine. Dans Variété micro, les paires restent côte à côte (grille 2 colonnes) : noix | autres oléagineux, huile colza | huile olive.
-8. **Style** : réutiliser les variables CSS de `:root` (`--green`, `--amber`, `--line`, `--green-soft`…). Avant d'ajouter une règle CSS, vérifier qu'aucune règle existante ne cible le même sélecteur : un doublon oublié a déjà cassé une mise en page.
+8. **Style** : réutiliser les variables CSS de `:root` (`--green`, `--amber`, `--line`, `--green-soft`…). Texte ambre : `--amber-ink` (`--amber` seul ne passe pas le contraste AA). Tailles de police : **uniquement l'échelle `--fs-xs` … `--fs-2xl`** (min 12 px, contrôlé par le script). Le vert de fond (`--green-soft`) signifie « accompli / actif » : ne pas l'utiliser pour un état neutre. Zones tactiles ≥ 24 px (viser 44), quitte à garder un visuel plus petit (cf. `.dot::before`, `.info-btn`). Avant d'ajouter une règle CSS, vérifier qu'aucune règle existante ne cible le même sélecteur : un doublon oublié a déjà cassé une mise en page.
 9. Rester en **fichier unique**, vanilla JS, sans dépendance ni étape de build.
 
 ## Validation avant chaque commit
@@ -126,7 +126,9 @@ Ce que couvre le script :
 3. **CACHE** : échoue si `index.html`/`manifest.json`/icônes diffèrent de `origin/main` sans bump de `CACHE` dans `sw.js`.
 4. **Logique** (`TZ=Europe/Paris`, localStorage simulé, partie données avant `// ---------- rendu ----------`) : dates locales, quêtes (13, poids = 1), protéines (½ légumineuses, cible découplée), variété féculents, Oméga-3, B12, jokers, check-in, quantités recommandées.
 5. **Migration** : état récent avec pastilles cochées conservé et migration idempotente, ancien format compteurs, archivage du lundi.
-6. `--render` : aucun débordement horizontal ni erreur JS, état sauvegardé après des clics.
+6. `--render` : aucun débordement horizontal ni erreur JS, zones tactiles ≥ 24 px, état sauvegardé après des clics.
+
+Le point 2 vérifie aussi que toutes les tailles de police passent par l'échelle `--fs-*`.
 
 Quand un changement touche les calculs ou le modèle, **ajouter le test correspondant dans le script** (un `check(...)` de plus) plutôt que d'écrire un test jetable. La validation finale reste un test sur le téléphone.
 
