@@ -66,6 +66,9 @@ check("tailles de police : échelle --fs-* uniquement", () => {
 check("manifest.json valide", () => { JSON.parse(read("manifest.json")); });
 const cacheVer = (read("sw.js").match(/const CACHE = "nutri-suivi-v(\d+)"/) || [])[1];
 check("CACHE sw.js lisible", () => assert.ok(cacheVer, "constante CACHE introuvable"));
+check("CHANGELOG à jour pour la version CACHE", () => {
+  assert.ok(new RegExp(`^## v${cacheVer}\\b`, "m").test(read("CHANGELOG.md")), `pas d'entrée « ## v${cacheVer} » dans CHANGELOG.md`);
+});
 check("CACHE bumpé si l'app a changé", () => {
   // compare à origin/main (ignoré si git ou la branche distante est indisponible)
   let diff, mainSw;
