@@ -6,6 +6,12 @@ Les choix écartés sont notés en bas, pour ne pas les rediscuter.
 
 ---
 
+## v32 — 2026-10-21 · Évolution : ajustements
+- Filtres de la courbe sur une grille de 4 colonnes en pleine largeur (il restait un vide à droite).
+- Plus de saccade au toucher de ⚡😊 : la largeur du graphique est fixe, et la place de la légende et de la phrase de corrélation est toujours réservée (masquée sans le ressenti).
+- Jokers : chaque barre affiche son nombre, avec la moyenne par semaine, au lieu de barres sans échelle.
+- Préservé : données, calculs.
+
 ## v31 — 2026-10-21 · Évolution dans l'Historique
 - Ligne discrète « 📈 Évolution », **repliée par défaut** en haut de l'Historique : les cartes de semaine restent le cœur de l'onglet.
 - Une fois dépliée : une courbe sur les 12 dernières semaines, au choix : Score (le même calcul que le badge, points colorés selon les mêmes seuils), Quêtes, Quotidien, Féculents, Protéines, Micro, Renfo.
