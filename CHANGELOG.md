@@ -6,6 +6,11 @@ Les choix écartés sont notés en bas, pour ne pas les rediscuter.
 
 ---
 
+## v30 — 2026-10-21 · Ouverture centrée, ℹ️ en bascule
+- Le jour courant s'affiche **au centre** de l'écran à l'ouverture, et non plus collé en haut (perturbant) : on voit la veille au-dessus et le lendemain en dessous.
+- ℹ️ fonctionne comme un interrupteur : un nouvel appui referme les Repères et ramène à la vue et à la position d'avant. Le libellé « ← Retour » est supprimé, et un anneau vert autour de ℹ️ indique que les Repères sont ouverts.
+- Préservé : données, calculs.
+
 ## v29 — 2026-10-20 · Ajustements design
 Suite à une critique design (usage, hiérarchie, accessibilité).
 - La vue Semaine **s'ouvre sur aujourd'hui** (`scrollToToday()`, au démarrage et via l'onglet) : le geste quotidien passait après tout un écran de quêtes.

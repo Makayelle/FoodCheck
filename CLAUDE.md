@@ -43,10 +43,10 @@ Seule ressource externe : Google Fonts (Fredoka, Nunito), mise en cache par le s
 
 | Vue | Accès | Contenu |
 |---|---|---|
-| `view-week` | onglet Semaine (s'ouvre défilée sur **aujourd'hui**, `scrollToToday()`) | Quêtes, Chaque jour (grille 2×4 + check-in ⚡😊), Renforcement, Féculents, Protéines, Variété micro, Jokers, teaser "Repères rapides" |
+| `view-week` | onglet Semaine (s'ouvre avec **aujourd'hui centré** à l'écran, `scrollToToday()`) | Quêtes, Chaque jour (grille 2×4 + check-in ⚡😊), Renforcement, Féculents, Protéines, Variété micro, Jokers, teaser "Repères rapides" |
 | `view-history` | onglet Historique | Une carte par semaine archivée, repliable ; la plus récente dépliée au démarrage |
 | `view-settings` | onglet Réglages | Sections **dans le même ordre que la vue Semaine** : Renforcement, Féculents, Protéines, Variété micro, Jokers, puis Quantités recommandées, puis Semaine en cours |
-| `view-info` | icône ℹ️ de l'en-tête (pas d'onglet) | Repères PNNS/OMS, repères de portion, liens mangerbouger.fr / santepubliquefrance.fr |
+| `view-info` | icône ℹ️ de l'en-tête, en bascule (`toggleInfo()` : un 2ᵉ appui ramène à la vue et à la position d'avant ; pas de bouton Retour) | Repères PNNS/OMS, repères de portion, liens mangerbouger.fr / santepubliquefrance.fr |
 
 ## Modèle de données
 
@@ -105,7 +105,7 @@ Choix nutritionnels assumés à ne pas défaire :
 
 1. **Les ids sont éternels.** Ne jamais renommer un `id` d'aliment, de groupe ou de quête : il indexe les données de l'utilisateur. Pour changer un libellé, modifier `name` (et `SHORT_NAMES` pour l'affichage en carte).
 2. **Toute évolution de structure passe par `migrate(s)`.** Les étapes doivent être idempotentes, commentées avec la version (`// v27 → v28 : …`), et **préserver les pastilles déjà cochées** (redimensionner les tableaux en tronquant/complétant, ne jamais les recréer vides). Une nouvelle entrée par défaut doit aussi être ajoutée à `DEFAULT_CONFIG` et à `SHORT_NAMES`.
-3. **Bumper `CACHE` dans `sw.js` à chaque déploiement** (`nutri-suivi-vN`, actuellement v29). Sans ça, la PWA installée continue de servir l'ancienne version hors-ligne. **Ajouter l'entrée correspondante en tête de `CHANGELOG.md`** (quoi, pourquoi, ce qui est préservé) ; noter aussi les idées écartées dans « Décisions écartées ».
+3. **Bumper `CACHE` dans `sw.js` à chaque déploiement** (`nutri-suivi-vN`, actuellement v30). Sans ça, la PWA installée continue de servir l'ancienne version hors-ligne. **Ajouter l'entrée correspondante en tête de `CHANGELOG.md`** (quoi, pourquoi, ce qui est préservé) ; noter aussi les idées écartées dans « Décisions écartées ».
 4. **Dates en local.** Utiliser `weekKey()` / `isoLocal()`, jamais `toISOString()` : en France, lundi 00:00 = dimanche 22:00 UTC.
 5. **Échapper tout texte saisi** par l'utilisateur avec `esc()` avant de l'injecter en HTML.
 6. **Emojis** : éviter les emojis Unicode 13+ (🫒 🫘 …), mal affichés sur certains appareils. Pas de doublon d'emoji dans un même pool.
