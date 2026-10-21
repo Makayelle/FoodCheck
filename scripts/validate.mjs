@@ -86,11 +86,11 @@ const ctx = vm.createContext({ structuredClone, console, localStorage: {
   getItem: k => store[k] ?? null, setItem: (k, v) => { store[k] = String(v); } } });
 let T = null;
 check("chargement partie données", () => {
-  vm.runInContext(dataJs + ";globalThis.T={STORE_KEY,DEFAULT_CONFIG,SHORT_NAMES,GROUPS,QUESTS,freshWeek,computeStats,questProgress,migrate,load,weekKey,applyRecommendedCounts}", ctx);
+  vm.runInContext(dataJs + ";globalThis.T={STORE_KEY,DEFAULT_CONFIG,SHORT_NAMES,GROUPS,QUESTS,freshWeek,computeStats,questProgress,migrate,load,weekKey,applyRecommendedCounts,weekScore,pearson}", ctx);
   T = ctx.T;
 });
 if (T) {
-  const { STORE_KEY, DEFAULT_CONFIG, SHORT_NAMES, GROUPS, QUESTS, freshWeek, computeStats, questProgress, migrate, load, weekKey, applyRecommendedCounts } = T;
+  const { STORE_KEY, DEFAULT_CONFIG, SHORT_NAMES, GROUPS, QUESTS, freshWeek, computeStats, questProgress, migrate, load, weekKey, applyRecommendedCounts, weekScore, pearson } = T;
   const fresh = () => { const c = structuredClone(DEFAULT_CONFIG); return [c, freshWeek(c)]; };
   const q = id => QUESTS.find(x => x.id === id);
 
@@ -166,6 +166,25 @@ if (T) {
     c.proteins[0].count = 9; c.jokers[0].count = 1; c.carbs.push({ id: "cx", name: "Quinoa", emoji: "🍙", count: 5 });
     applyRecommendedCounts(c);
     assert.equal(c.proteins[0].count, 4); assert.equal(c.jokers[0].count, 1); assert.equal(c.carbs.at(-1).count, 5);
+  });
+
+  check("score de semaine : Renforcement poids ½, jokers exclus", () => {
+    const [c, w] = fresh();
+    for (const k in w.daily) for (const cat in w.daily[k]) w.daily[k][cat].fill(true);
+    for (const g of ["proteins", "carbs", "micro"]) for (const id in w.pools[g]) w.pools[g][id].fill(true);
+    w.pools.jokers.alcool.fill(true);
+    const st = computeStats(w, c);
+    // tout à 100 % sauf Quêtes (pas de muscu → Muscu non validée) et Renforcement à 0
+    const expected = (100 * st.quests.done / st.quests.tot * 1 + 100 * 4 + 0 * .5) / 5.5;
+    assert.ok(Math.abs(weekScore(st) - Math.round(expected * 100) / 100) < 1, `${weekScore(st)} ≠ ${expected}`);
+    w.pools.jokers.alcool.fill(false);
+    assert.equal(weekScore(computeStats(w, c)), weekScore(st), "les jokers ne doivent pas changer le score");
+  });
+  check("corrélation score ↔ ressenti", () => {
+    assert.equal(pearson([1, 2, 3], [1, 2, 3]), null, "< 4 points → null");
+    assert.ok(Math.abs(pearson([10, 20, 30, 40], [2, 3, 4, 5]) - 1) < 1e-9);
+    assert.ok(Math.abs(pearson([10, 20, 30, 40], [5, 4, 3, 2]) + 1) < 1e-9);
+    assert.equal(pearson([10, 10, 10, 10], [1, 2, 3, 4]), null, "variance nulle → null");
   });
 
   // ---------- 4. migration ----------

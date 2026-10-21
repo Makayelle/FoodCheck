@@ -6,6 +6,15 @@ Les choix écartés sont notés en bas, pour ne pas les rediscuter.
 
 ---
 
+## v31 — 2026-10-21 · Évolution dans l'Historique
+- Ligne discrète « 📈 Évolution », **repliée par défaut** en haut de l'Historique : les cartes de semaine restent le cœur de l'onglet.
+- Une fois dépliée : une courbe sur les 12 dernières semaines, au choix : Score (le même calcul que le badge, points colorés selon les mêmes seuils), Quêtes, Quotidien, Féculents, Protéines, Micro, Renfo.
+- Bouton ⚡😊 : superpose énergie et humeur (axe 1–5 à droite) et indique s'il y a un lien entre le score et le ressenti (corrélation, à partir de 4 semaines notées). C'est un constat indicatif, pas une preuve.
+- Jokers en **barres neutres**, informatives, et non en courbe : ce n'est pas un score « plus bas = mieux ».
+- Moins de 3 semaines archivées : un simple message.
+- Le calcul du score est désormais partagé entre le badge et la courbe (`weekScore()`), et testé dans `validate.mjs`.
+- Préservé : données (aucune migration : tout vient des semaines déjà archivées).
+
 ## v30 — 2026-10-21 · Ouverture centrée, ℹ️ en bascule
 - Le jour courant s'affiche **au centre** de l'écran à l'ouverture, et non plus collé en haut (perturbant) : on voit la veille au-dessus et le lendemain en dessous.
 - ℹ️ fonctionne comme un interrupteur : un nouvel appui referme les Repères et ramène à la vue et à la position d'avant. Le libellé « ← Retour » est supprimé, et un anneau vert autour de ℹ️ indique que les Repères sont ouverts.

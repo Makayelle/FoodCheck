@@ -233,6 +233,41 @@ h2{
 .split-detail{flex:1;font-size:var(--fs-sm);font-weight:800;color:var(--ink-soft)}
 .bar-row .b-val{width:38px;text-align:right;font-weight:800}
 .bar-row .b-val.variety{width:auto;white-space:nowrap;font-size:var(--fs-xs)}
+/* ---- évolution (repliée, discrète) ---- */
+.trend-toggle{
+  display:flex;align-items:center;gap:6px;border:none;background:none;padding:6px 0 10px;
+  font-family:inherit;font-size:var(--fs-sm);font-weight:700;color:var(--ink-soft);cursor:pointer;min-height:32px;
+}
+.trend{border:1px solid var(--line);border-radius:12px;padding:10px 10px 8px;margin-bottom:12px}
+.trend-chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}
+.t-chip{
+  border:1.5px solid var(--line);background:#fff;border-radius:99px;padding:0 10px;min-height:30px;
+  font-family:inherit;font-size:var(--fs-xs);font-weight:800;color:var(--ink-soft);cursor:pointer;
+}
+.t-chip.on{background:var(--green-soft);border-color:#BFDCC2;color:var(--green)}
+.trend-svg{display:block;width:100%;height:auto}
+.trend-svg text{font-size:var(--fs-xs);fill:var(--ink-soft);font-family:inherit;font-weight:700}
+.trend-svg .t-val{fill:var(--ink);font-weight:800}
+.t-grid{stroke:var(--line);stroke-dasharray:3 3}
+.t-base{stroke:var(--line)}
+.t-line{fill:none;stroke:var(--green);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
+.t-dot{stroke:#fff;stroke-width:1.5}
+.t-dot.hi{fill:var(--green)}
+.t-dot.mid{fill:var(--amber)}
+.t-dot.low{fill:#C4553F}
+.t-energy,.t-mood{fill:none;stroke-width:1.8;stroke-dasharray:4 3;stroke-linecap:round}
+.t-energy{stroke:var(--amber)}
+.t-mood{stroke:var(--ink-soft)}
+.trend-legend{display:flex;align-items:center;gap:5px;flex-wrap:wrap;font-size:var(--fs-xs);font-weight:700;color:var(--ink-soft);margin-top:4px}
+.trend-legend span{display:inline-block;width:14px;height:0;border-top:2.5px solid var(--green);margin-left:6px}
+.trend-legend .lg-line{margin-left:0}
+.trend-legend .lg-energy{border-top:2px dashed var(--amber)}
+.trend-legend .lg-mood{border-top:2px dashed var(--ink-soft)}
+.trend-note{font-size:var(--fs-xs);color:var(--ink-soft);line-height:1.5;margin:6px 0 4px}
+.trend-jok-label{font-size:var(--fs-xs);font-weight:800;color:var(--ink-soft);margin-top:8px}
+.trend-jok-label span{font-weight:600}
+.trend-jok{display:block;width:100%;height:auto}
+.t-jok{fill:#CFCBC3}
 .empty{
   text-align:center;color:var(--ink-soft);font-size:var(--fs-md);padding:30px 16px;line-height:1.6;
 }
@@ -437,6 +472,7 @@ nav button.active{color:var(--green)}
     <section class="card">
       <h2>Semaines passées</h2>
       <p class="sub">Archivées automatiquement chaque lundi</p>
+      <div id="trendBox"></div>
       <div id="histList"></div>
     </section>
   </div>
@@ -967,6 +1003,38 @@ function load(){
 }
 function save(s){ localStorage.setItem(STORE_KEY, JSON.stringify(s || state)); }
 
+/* Catégories notées d'une semaine archivée, dans l'ordre de la page de saisie :
+   [libellé, {done,tot}, type, poids]. Renforcement ne compte que pour moitié dans le
+   badge : ses 2 pastilles seulement font basculer 0/50/100 % sans nuance — un seul
+   oubli y pèserait sinon autant qu'un oubli sur 56 pastilles quotidiennes. Jokers exclus. */
+function weekCats(st){
+  const cats = [];
+  if (st.quests) cats.push(["Quêtes", st.quests, "pct", 1]);
+  cats.push(["Quotidien", st.daily, "pct", 1]);
+  const hasVariety = !!st.carbsVariety;
+  cats.push(["Féculents", hasVariety ? st.carbsVariety : st.carbs, hasVariety ? "variety" : "pct", 1]);
+  cats.push(["Protéines", st.proteins, "pct", 1]);
+  if (st.micro) cats.push(["Variété micro", st.micro, "pct", 1]);
+  if (st.muscu) cats.push(["Renforcement", st.muscu, "pct", .5]);
+  return cats;
+}
+const pctOf = o => o && o.tot ? Math.round(100*o.done/o.tot) : 0;
+/* Score 0–100 de la semaine = moyenne pondérée des catégories (sert au badge et à la courbe) */
+function weekScore(st){
+  let wsum = 0, wtot = 0;
+  for (const c of weekCats(st)){ wsum += pctOf(c[1]) * c[3]; wtot += c[3]; }
+  return wtot ? wsum / wtot : 0;
+}
+/* Corrélation de Pearson (null si moins de 4 points ou variance nulle) */
+function pearson(xs, ys){
+  const n = xs.length;
+  if (n < 4) return null;
+  const mx = xs.reduce((a,b)=>a+b,0)/n, my = ys.reduce((a,b)=>a+b,0)/n;
+  let sxy = 0, sxx = 0, syy = 0;
+  for (let i=0;i<n;i++){ const dx = xs[i]-mx, dy = ys[i]-my; sxy += dx*dy; sxx += dx*dx; syy += dy*dy; }
+  return sxx && syy ? sxy / Math.sqrt(sxx*syy) : null;
+}
+
 // ---------- rendu ----------
 function chipHTML(emoji, done, onclick, label, extra=""){
   return `<button class="chip${done?" done":""}${extra?" "+extra:""}" onclick="${onclick}" aria-pressed="${done}" aria-label="${label}"><span class="em">${emoji}</span></button>`;
@@ -1072,21 +1140,10 @@ function renderHistory(){
     el.innerHTML = `<p class="empty">Rien pour l'instant.<br>Votre première semaine sera archivée lundi prochain. 📅</p>`;
     return;
   }
-  const pct = o => o.tot ? Math.round(100*o.done/o.tot) : 0;
-  const barClass = p => p >= 80 ? "hi" : (p >= 50 ? "mid" : "low");
+  const pct = pctOf;
+  renderTrend();
   el.innerHTML = state.history.map(h=>{
-    /* même ordre que la page de saisie : Quêtes, Quotidien, Féculents, Protéines, Micro — jokers à part.
-       Le 4e élément est le poids dans la moyenne du badge : Renforcement ne compte que
-       pour moitié, car ses 2 pastilles seulement font basculer 0/50/100% sans nuance —
-       un seul oubli y pèserait sinon autant qu'un oubli sur 56 pastilles quotidiennes. */
-    const cats = [];
-    if (h.stats.quests) cats.push(["Quêtes", h.stats.quests, "pct", 1]);
-    cats.push(["Quotidien", h.stats.daily, "pct", 1]);
-    const hasVariety = !!h.stats.carbsVariety;
-    cats.push(["Féculents", hasVariety ? h.stats.carbsVariety : h.stats.carbs, hasVariety ? "variety" : "pct", 1]);
-    cats.push(["Protéines", h.stats.proteins, "pct", 1]);
-    if (h.stats.micro)  cats.push(["Variété micro", h.stats.micro, "pct", 1]);
-    if (h.stats.muscu)  cats.push(["Renforcement", h.stats.muscu, "pct", .5]);
+    const cats = weekCats(h.stats);
     const isOpen = expandedWeeks.has(h.key);
     const rows = cats.map(([label,o,kind])=>{
       const p = pct(o);
@@ -1113,9 +1170,7 @@ function renderHistory(){
       jokRow = `<div class="bar-row"><span class="b-label">Jokers dépensés</span><span class="jok-detail">${detail}</span></div>`;
     }
     /* badge de tendance : moyenne pondérée de tout sauf jokers */
-    let wsum = 0, wtot = 0;
-    for (const c of cats){ wsum += pct(c[1]) * c[3]; wtot += c[3]; }
-    const avg = wtot ? wsum / wtot : 0;
+    const avg = weekScore(h.stats);
     const badge = avg >= 90 ? ["hi","🌟 Excellente"]
                 : avg >= 75 ? ["hi","👍 Bonne"]
                 : avg >= 50 ? ["mid","😐 Moyenne"]
@@ -1129,6 +1184,97 @@ function renderHistory(){
       <span class="hist-head-right"><span class="hist-badge ${badge[0]}">${badge[1]}</span><span class="hist-chevron">${isOpen ? "⌃" : "⌄"}</span></span>
       </h3>${detail}</div>`;
   }).join("");
+}
+
+const barClass = p => p >= 80 ? "hi" : (p >= 50 ? "mid" : "low");
+
+/* ---- Évolution (repliée par défaut, en haut de l'Historique) ----
+   Une courbe à la fois sur les 12 dernières semaines ; ressenti ⚡😊 superposable ;
+   jokers en barres neutres, informatives (pas un score « plus bas = mieux »). */
+let trendOpen = false, trendMetric = "score", trendFeel = false;
+const TREND_METRICS = [
+  ["score", "Score"], ["Quêtes", "Quêtes"], ["Quotidien", "Quotidien"], ["Féculents", "Féculents"],
+  ["Protéines", "Protéines"], ["Variété micro", "Micro"], ["Renforcement", "Renfo"],
+];
+function trendValue(st, metric){
+  if (metric === "score") return weekScore(st);
+  const c = weekCats(st).find(x => x[0] === metric);
+  return c ? pctOf(c[1]) : null;
+}
+function toggleTrend(){ trendOpen = !trendOpen; renderTrend(); }
+function setTrendMetric(m){ trendMetric = m; renderTrend(); }
+function toggleTrendFeel(){ trendFeel = !trendFeel; renderTrend(); }
+function renderTrend(){
+  const el = document.getElementById("trendBox");
+  const weeks = state.history.slice(0, 12).reverse(); // ancienne → récente
+  if (!weeks.length){ el.innerHTML = ""; return; }
+  const head = `<button class="trend-toggle" onclick="toggleTrend()" aria-expanded="${trendOpen}">📈 Évolution <span class="hist-chevron">${trendOpen ? "⌃" : "⌄"}</span></button>`;
+  if (!trendOpen){ el.innerHTML = head; return; }
+  if (weeks.length < 3){
+    el.innerHTML = head + `<p class="trend-note">L'évolution apparaîtra après 3 semaines archivées (${weeks.length}/3).</p>`;
+    return;
+  }
+  const chips = TREND_METRICS.map(([id, label]) =>
+    `<button class="t-chip${trendMetric===id?" on":""}" onclick="setTrendMetric('${id}')">${label}</button>`).join("")
+    + `<button class="t-chip feel${trendFeel?" on":""}" onclick="toggleTrendFeel()" aria-pressed="${trendFeel}">⚡😊</button>`;
+  // géométrie du graphique (unités SVG ≈ px)
+  const W = 320, H = 132, L = 26, R = trendFeel ? 22 : 8, T = 8, B = 20;
+  const n = weeks.length, iw = W - L - R, ih = H - T - B;
+  const x = i => L + (n === 1 ? iw/2 : i * iw / (n - 1));
+  const y = v => T + ih * (1 - v / 100);
+  const path = pts => pts.reduce((d, p, i) => d + (p.v == null ? "" : `${d && pts[i-1]?.v != null ? "L" : "M"}${x(p.i).toFixed(1)},${y(p.v).toFixed(1)}`), "");
+  const vals = weeks.map((h, i) => ({i, v: trendValue(h.stats, trendMetric)}));
+  let svg = "";
+  for (const g of [50, 80]) svg += `<line class="t-grid" x1="${L}" x2="${W-R}" y1="${y(g)}" y2="${y(g)}"/><text class="t-axis" x="${L-4}" y="${y(g)+4}" text-anchor="end">${g}</text>`;
+  svg += `<line class="t-base" x1="${L}" x2="${W-R}" y1="${y(0)}" y2="${y(0)}"/>`;
+  // ressenti : 1–5 ramené sur 0–100, axe à droite
+  const feelOf = (h, f) => h.stats.checkin?.[f] ?? null;
+  if (trendFeel){
+    for (const [f, cls] of [["energy","t-energy"],["mood","t-mood"]]){
+      const pts = weeks.map((h, i) => { const v = feelOf(h, f); return {i, v: v == null ? null : (v - 1) * 25}; });
+      svg += `<path class="${cls}" d="${path(pts)}"/>`;
+    }
+    for (const v of [1, 3, 5]) svg += `<text class="t-axis" x="${W-R+4}" y="${y((v-1)*25)+4}">${v}</text>`;
+  }
+  svg += `<path class="t-line" d="${path(vals)}"/>`;
+  for (const p of vals) if (p.v != null) svg += `<circle class="t-dot ${barClass(p.v)}" cx="${x(p.i)}" cy="${y(p.v)}" r="3.5"/>`;
+  const last = [...vals].reverse().find(p => p.v != null);
+  if (last) svg += `<text class="t-val" x="${x(last.i)}" y="${y(last.v) - 8}" text-anchor="${n > 1 ? "end" : "middle"}">${Math.round(last.v)}</text>`;
+  const dlabel = k => { const d = new Date(k + "T00:00:00"); return `${d.getDate()}/${d.getMonth()+1}`; };
+  for (const i of [...new Set([0, Math.floor((n-1)/2), n-1])])
+    svg += `<text class="t-axis" x="${x(i)}" y="${H-4}" text-anchor="${i===0?"start":(i===n-1?"end":"middle")}">${dlabel(weeks[i].key)}</text>`;
+  // jokers : barres neutres sur le même axe des semaines
+  const jok = weeks.map(h => h.stats.jokers ? h.stats.jokers.done : 0);
+  const jmax = Math.max(1, ...jok);
+  const bw = Math.min(14, iw / n * .6);
+  let jsvg = "";
+  jok.forEach((v, i) => { const bh = 26 * v / jmax;
+    jsvg += `<rect class="t-jok" x="${(x(i) - bw/2).toFixed(1)}" y="${(30 - bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="2"/>`; });
+  // lien score ↔ ressenti (moyenne ⚡ et 😊), à titre indicatif
+  let corr = "";
+  if (trendFeel){
+    const xs = [], ys = [];
+    for (const h of weeks){
+      const e = feelOf(h, "energy"), m = feelOf(h, "mood");
+      const f = e != null && m != null ? (e + m) / 2 : (e ?? m);
+      if (f != null){ xs.push(weekScore(h.stats)); ys.push(f); }
+    }
+    const r = pearson(xs, ys);
+    const txt = r == null ? "pas encore assez de semaines avec un ressenti noté (4 minimum)"
+      : r >= .5 ? "les semaines bien remplies sont nettement celles où vous vous sentez mieux"
+      : r >= .2 ? "léger lien : un peu mieux quand les semaines sont bien remplies"
+      : r > -.2 ? "pas de lien visible pour l'instant"
+      : "lien inverse pour l'instant — à observer sur la durée";
+    corr = `<p class="trend-note">Score ↔ ressenti : ${txt}.</p>`;
+  }
+  el.innerHTML = head + `<div class="trend">
+    <div class="trend-chips">${chips}</div>
+    <svg class="trend-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Évolution ${trendMetric === "score" ? "du score" : trendMetric} sur ${n} semaines">${svg}</svg>
+    ${trendFeel ? `<div class="trend-legend"><span class="lg-line"></span>${trendMetric==="score"?"Score":TREND_METRICS.find(m=>m[0]===trendMetric)[1]} <span class="lg-energy"></span>⚡ énergie <span class="lg-mood"></span>😊 humeur</div>` : ""}
+    ${corr}
+    <div class="trend-jok-label">Jokers dépensés <span>(informatif)</span></div>
+    <svg class="trend-jok" viewBox="0 0 ${W} 32" aria-hidden="true">${jsvg}</svg>
+  </div>`;
 }
 
 function renderSettings(){

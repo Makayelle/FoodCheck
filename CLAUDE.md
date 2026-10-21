@@ -44,7 +44,7 @@ Seule ressource externe : Google Fonts (Fredoka, Nunito), mise en cache par le s
 | Vue | Accès | Contenu |
 |---|---|---|
 | `view-week` | onglet Semaine (s'ouvre avec **aujourd'hui centré** à l'écran, `scrollToToday()`) | Quêtes, Chaque jour (grille 2×4 + check-in ⚡😊), Renforcement, Féculents, Protéines, Variété micro, Jokers, teaser "Repères rapides" |
-| `view-history` | onglet Historique | Une carte par semaine archivée, repliable ; la plus récente dépliée au démarrage |
+| `view-history` | onglet Historique | Ligne « 📈 Évolution » repliée par défaut (`renderTrend()` : courbe 12 semaines, métrique au choix, ressenti ⚡😊 superposable + corrélation, jokers en barres neutres), puis une carte par semaine archivée, repliable ; la plus récente dépliée au démarrage |
 | `view-settings` | onglet Réglages | Sections **dans le même ordre que la vue Semaine** : Renforcement, Féculents, Protéines, Variété micro, Jokers, puis Quantités recommandées, puis Semaine en cours |
 | `view-info` | icône ℹ️ de l'en-tête, en bascule (`toggleInfo()` : un 2ᵉ appui ramène à la vue et à la position d'avant ; pas de bouton Retour) | Repères PNNS/OMS, repères de portion, liens mangerbouger.fr / santepubliquefrance.fr |
 
@@ -83,7 +83,7 @@ state = {
 - **Féculents (Historique)** : variété = nombre de types touchés au moins une fois, plafonné à `carbsVarietyTarget`. Pas de quantité : manger moins de glucides n'est pas "mauvais".
 - **Origine des protéines** (`proteinSplit`) : animal = poulet + boeuf + oeufs + poissongras + poisson ; végétal = `vegetal` + 0,5 × légumineuses. Ligne **informative** dans l'Historique (repère PNNS ≈ 50/50), non notée, hors badge.
 - **Jokers** : affichés en détail consommé ("1 🍷 · 2 🍰"), jamais en %.
-- **Badge de semaine** : moyenne pondérée de Quêtes, Quotidien, Féculents (variété), Protéines, Variété micro (poids 1) et Renforcement (**poids 0,5**, car 2 pastilles seulement = 0/50/100 %). Jokers exclus. Seuils : ≥ 90 🌟 Excellente, ≥ 75 👍 Bonne, ≥ 50 😐 Moyenne, sinon 😴 En retrait.
+- **Badge de semaine** (`weekScore()`, partagé avec la courbe d'évolution) : moyenne pondérée de Quêtes, Quotidien, Féculents (variété), Protéines, Variété micro (poids 1) et Renforcement (**poids 0,5**, car 2 pastilles seulement = 0/50/100 %). Jokers exclus. Seuils : ≥ 90 🌟 Excellente, ≥ 75 👍 Bonne, ≥ 50 😐 Moyenne, sinon 😴 En retrait.
 - **Couleur des barres** : ≥ 80 vert, ≥ 50 ambre, sinon terracotta.
 - **Check-in ⚡😊** : moyennes des jours renseignés uniquement (0 ignoré). Visible pour aujourd'hui et les jours passés. Re-taper la même note l'efface.
 - **Quantités recommandées** : `applyRecommendedCounts()` remet le `count` des aliments **par défaut** à leur valeur de `DEFAULT_CONFIG`. Ne touche jamais : les aliments ajoutés à la main, les cibles, les **jokers** (budget personnel, `RESET_EXCLUDED`), et ne recrée pas un aliment supprimé. Les pastilles déjà cochées sont conservées.
@@ -105,7 +105,7 @@ Choix nutritionnels assumés à ne pas défaire :
 
 1. **Les ids sont éternels.** Ne jamais renommer un `id` d'aliment, de groupe ou de quête : il indexe les données de l'utilisateur. Pour changer un libellé, modifier `name` (et `SHORT_NAMES` pour l'affichage en carte).
 2. **Toute évolution de structure passe par `migrate(s)`.** Les étapes doivent être idempotentes, commentées avec la version (`// v27 → v28 : …`), et **préserver les pastilles déjà cochées** (redimensionner les tableaux en tronquant/complétant, ne jamais les recréer vides). Une nouvelle entrée par défaut doit aussi être ajoutée à `DEFAULT_CONFIG` et à `SHORT_NAMES`.
-3. **Bumper `CACHE` dans `sw.js` à chaque déploiement** (`nutri-suivi-vN`, actuellement v30). Sans ça, la PWA installée continue de servir l'ancienne version hors-ligne. **Ajouter l'entrée correspondante en tête de `CHANGELOG.md`** (quoi, pourquoi, ce qui est préservé) ; noter aussi les idées écartées dans « Décisions écartées ».
+3. **Bumper `CACHE` dans `sw.js` à chaque déploiement** (`nutri-suivi-vN`, actuellement v31). Sans ça, la PWA installée continue de servir l'ancienne version hors-ligne. **Ajouter l'entrée correspondante en tête de `CHANGELOG.md`** (quoi, pourquoi, ce qui est préservé) ; noter aussi les idées écartées dans « Décisions écartées ».
 4. **Dates en local.** Utiliser `weekKey()` / `isoLocal()`, jamais `toISOString()` : en France, lundi 00:00 = dimanche 22:00 UTC.
 5. **Échapper tout texte saisi** par l'utilisateur avec `esc()` avant de l'injecter en HTML.
 6. **Emojis** : éviter les emojis Unicode 13+ (🫒 🫘 …), mal affichés sur certains appareils. Pas de doublon d'emoji dans un même pool.
