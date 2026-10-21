@@ -239,9 +239,9 @@ h2{
   font-family:inherit;font-size:var(--fs-sm);font-weight:700;color:var(--ink-soft);cursor:pointer;min-height:32px;
 }
 .trend{border:1px solid var(--line);border-radius:12px;padding:10px 10px 8px;margin-bottom:12px}
-.trend-chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}
+.trend-chips{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:8px}
 .t-chip{
-  border:1.5px solid var(--line);background:#fff;border-radius:99px;padding:0 10px;min-height:30px;
+  border:1.5px solid var(--line);background:#fff;border-radius:99px;padding:0 4px;min-height:30px;white-space:nowrap;
   font-family:inherit;font-size:var(--fs-xs);font-weight:800;color:var(--ink-soft);cursor:pointer;
 }
 .t-chip.on{background:var(--green-soft);border-color:#BFDCC2;color:var(--green)}
@@ -263,10 +263,14 @@ h2{
 .trend-legend .lg-line{margin-left:0}
 .trend-legend .lg-energy{border-top:2px dashed var(--amber)}
 .trend-legend .lg-mood{border-top:2px dashed var(--ink-soft)}
+.trend-legend em{font-style:normal;display:contents}
+.trend-legend em.off span,.trend-legend em.off{visibility:hidden}
+.feel-note{min-height:3em}
 .trend-note{font-size:var(--fs-xs);color:var(--ink-soft);line-height:1.5;margin:6px 0 4px}
 .trend-jok-label{font-size:var(--fs-xs);font-weight:800;color:var(--ink-soft);margin-top:8px}
 .trend-jok-label span{font-weight:600}
 .trend-jok{display:block;width:100%;height:auto}
+.trend-jok text{font-size:var(--fs-xs);fill:var(--ink-soft);font-family:inherit;font-weight:700}
 .t-jok{fill:#CFCBC3}
 .empty{
   text-align:center;color:var(--ink-soft);font-size:var(--fs-md);padding:30px 16px;line-height:1.6;
@@ -1218,7 +1222,7 @@ function renderTrend(){
     `<button class="t-chip${trendMetric===id?" on":""}" onclick="setTrendMetric('${id}')">${label}</button>`).join("")
     + `<button class="t-chip feel${trendFeel?" on":""}" onclick="toggleTrendFeel()" aria-pressed="${trendFeel}">⚡😊</button>`;
   // géométrie du graphique (unités SVG ≈ px)
-  const W = 320, H = 132, L = 26, R = trendFeel ? 22 : 8, T = 8, B = 20;
+  const W = 320, H = 132, L = 26, R = 22, T = 8, B = 20;
   const n = weeks.length, iw = W - L - R, ih = H - T - B;
   const x = i => L + (n === 1 ? iw/2 : i * iw / (n - 1));
   const y = v => T + ih * (1 - v / 100);
@@ -1247,11 +1251,13 @@ function renderTrend(){
   const jok = weeks.map(h => h.stats.jokers ? h.stats.jokers.done : 0);
   const jmax = Math.max(1, ...jok);
   const bw = Math.min(14, iw / n * .6);
-  let jsvg = "";
+  let jsvg = `<line class="t-base" x1="${L}" x2="${W-R}" y1="44" y2="44"/>`;
   jok.forEach((v, i) => { const bh = 26 * v / jmax;
-    jsvg += `<rect class="t-jok" x="${(x(i) - bw/2).toFixed(1)}" y="${(30 - bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="2"/>`; });
+    jsvg += `<rect class="t-jok" x="${(x(i) - bw/2).toFixed(1)}" y="${(44 - bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="2"/>`
+          + `<text class="t-axis" x="${x(i)}" y="${(44 - bh - 4).toFixed(1)}" text-anchor="middle">${v}</text>`; });
+  const javg = (jok.reduce((a,b)=>a+b,0) / n).toFixed(1).replace(".",",");
   // lien score ↔ ressenti (moyenne ⚡ et 😊), à titre indicatif
-  let corr = "";
+  let corr = `Touchez ⚡😊 pour comparer avec votre ressenti.`;
   if (trendFeel){
     const xs = [], ys = [];
     for (const h of weeks){
@@ -1265,15 +1271,15 @@ function renderTrend(){
       : r >= .2 ? "léger lien : un peu mieux quand les semaines sont bien remplies"
       : r > -.2 ? "pas de lien visible pour l'instant"
       : "lien inverse pour l'instant — à observer sur la durée";
-    corr = `<p class="trend-note">Score ↔ ressenti : ${txt}.</p>`;
+    corr = `Score ↔ ressenti : ${txt}.`;
   }
   el.innerHTML = head + `<div class="trend">
     <div class="trend-chips">${chips}</div>
     <svg class="trend-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Évolution ${trendMetric === "score" ? "du score" : trendMetric} sur ${n} semaines">${svg}</svg>
-    ${trendFeel ? `<div class="trend-legend"><span class="lg-line"></span>${trendMetric==="score"?"Score":TREND_METRICS.find(m=>m[0]===trendMetric)[1]} <span class="lg-energy"></span>⚡ énergie <span class="lg-mood"></span>😊 humeur</div>` : ""}
-    ${corr}
-    <div class="trend-jok-label">Jokers dépensés <span>(informatif)</span></div>
-    <svg class="trend-jok" viewBox="0 0 ${W} 32" aria-hidden="true">${jsvg}</svg>
+    <div class="trend-legend"><span class="lg-line"></span>${TREND_METRICS.find(m=>m[0]===trendMetric)[1]}<em class="${trendFeel ? "" : "off"}"><span class="lg-energy"></span>⚡ énergie <span class="lg-mood"></span>😊 humeur</em></div>
+    <p class="trend-note feel-note">${corr}</p>
+    <div class="trend-jok-label">Jokers dépensés par semaine <span>· moyenne ${javg} (informatif)</span></div>
+    <svg class="trend-jok" viewBox="0 0 ${W} 48" aria-hidden="true">${jsvg}</svg>
   </div>`;
 }
 
