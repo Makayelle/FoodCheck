@@ -33,6 +33,7 @@
   --fs-lg:1.0625rem;  /* 17 px : titres de carte */
   --fs-xl:1.25rem;    /* 20 px : logo, emojis */
   --fs-2xl:1.45rem;   /* 23 px : emojis de la grille quotidienne */
+  --fs-icon:2rem;     /* 32 px : icône ℹ️ de l'en-tête */
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{font-size:16px}
@@ -54,14 +55,11 @@ main{padding:0 12px}
 /* ---- en-tête : icône info ---- */
 .head-right{display:flex;align-items:center;gap:9px}
 .info-btn{
-  border:none;color:var(--green);margin:-9px;
-  background:radial-gradient(circle,var(--green-soft) 12.5px,transparent 13px);
-  width:44px;height:44px;border-radius:50%;font-size:var(--fs-sm);flex:none;
+  border:none;background:none;margin:-9px;line-height:1;
+  width:44px;height:44px;border-radius:50%;font-size:var(--fs-icon);flex:none;
   display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;
 }
 .info-btn:active{transform:scale(.9)}
-/* vue Repères ouverte : anneau vert, un nouvel appui referme */
-.info-btn.active{background:radial-gradient(circle,var(--green-soft) 10.5px,var(--green) 11px 13px,transparent 13.5px)}
 
 /* ---- teaser repères (vue Semaine) + retour vers l'info complète ---- */
 .see-all-link{
@@ -246,9 +244,12 @@ h2{
 }
 .t-chip.on{background:var(--green-soft);border-color:#BFDCC2;color:var(--green)}
 .trend-svg{display:block;width:100%;height:auto}
-.trend-svg text{font-size:var(--fs-xs);fill:var(--ink-soft);font-family:inherit;font-weight:700}
+.trend-svg text{font-size:var(--fs-xs);fill:var(--ink-soft);font-family:inherit;font-weight:600}
+.trend-svg .t-unit{font-weight:800;opacity:.8}
+.t-band{fill:var(--green-soft);opacity:.55}
+.t-tick{stroke:var(--ink-soft);stroke-width:1;opacity:.5}
 .trend-svg .t-val{fill:var(--ink);font-weight:800}
-.t-grid{stroke:var(--line);stroke-dasharray:3 3}
+.t-grid{stroke:var(--line);stroke-dasharray:2 3}
 .t-base{stroke:var(--line)}
 .t-line{fill:none;stroke:var(--green);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
 .t-dot{stroke:#fff;stroke-width:1.5}
@@ -1222,15 +1223,20 @@ function renderTrend(){
     `<button class="t-chip${trendMetric===id?" on":""}" onclick="setTrendMetric('${id}')">${label}</button>`).join("")
     + `<button class="t-chip feel${trendFeel?" on":""}" onclick="toggleTrendFeel()" aria-pressed="${trendFeel}">⚡😊</button>`;
   // géométrie du graphique (unités SVG ≈ px)
-  const W = 320, H = 132, L = 26, R = 22, T = 8, B = 20;
+  const W = 320, H = 150, L = 30, R = 24, T = 16, B = 26;
   const n = weeks.length, iw = W - L - R, ih = H - T - B;
   const x = i => L + (n === 1 ? iw/2 : i * iw / (n - 1));
   const y = v => T + ih * (1 - v / 100);
   const path = pts => pts.reduce((d, p, i) => d + (p.v == null ? "" : `${d && pts[i-1]?.v != null ? "L" : "M"}${x(p.i).toFixed(1)},${y(p.v).toFixed(1)}`), "");
   const vals = weeks.map((h, i) => ({i, v: trendValue(h.stats, trendMetric)}));
   let svg = "";
-  for (const g of [50, 80]) svg += `<line class="t-grid" x1="${L}" x2="${W-R}" y1="${y(g)}" y2="${y(g)}"/><text class="t-axis" x="${L-4}" y="${y(g)+4}" text-anchor="end">${g}</text>`;
-  svg += `<line class="t-base" x1="${L}" x2="${W-R}" y1="${y(0)}" y2="${y(0)}"/>`;
+  // zone ≥ 80 % (barres vertes de l'Historique) légèrement teintée, repères 0 · 50 · 80 · 100
+  svg += `<rect class="t-band" x="${L}" y="${y(100)}" width="${iw}" height="${y(80) - y(100)}"/>`;
+  for (const g of [0, 50, 80, 100]){
+    svg += `<line class="${g === 0 ? "t-base" : "t-grid"}" x1="${L}" x2="${W-R}" y1="${y(g)}" y2="${y(g)}"/>`;
+    svg += `<text class="t-axis" x="${L-6}" y="${y(g)+4}" text-anchor="end">${g}</text>`;
+  }
+  svg += `<text class="t-unit" x="${L-6}" y="${T-6}" text-anchor="end">%</text>`;
   // ressenti : 1–5 ramené sur 0–100, axe à droite
   const feelOf = (h, f) => h.stats.checkin?.[f] ?? null;
   if (trendFeel){
@@ -1238,15 +1244,21 @@ function renderTrend(){
       const pts = weeks.map((h, i) => { const v = feelOf(h, f); return {i, v: v == null ? null : (v - 1) * 25}; });
       svg += `<path class="${cls}" d="${path(pts)}"/>`;
     }
-    for (const v of [1, 3, 5]) svg += `<text class="t-axis" x="${W-R+4}" y="${y((v-1)*25)+4}">${v}</text>`;
+    for (const v of [1, 3, 5]) svg += `<text class="t-axis" x="${W-R+6}" y="${y((v-1)*25)+4}">${v}</text>`;
+    svg += `<text class="t-unit" x="${W-R+6}" y="${T-6}">/5</text>`;
   }
   svg += `<path class="t-line" d="${path(vals)}"/>`;
   for (const p of vals) if (p.v != null) svg += `<circle class="t-dot ${barClass(p.v)}" cx="${x(p.i)}" cy="${y(p.v)}" r="3.5"/>`;
   const last = [...vals].reverse().find(p => p.v != null);
   if (last) svg += `<text class="t-val" x="${x(last.i)}" y="${y(last.v) - 8}" text-anchor="${n > 1 ? "end" : "middle"}">${Math.round(last.v)}</text>`;
-  const dlabel = k => { const d = new Date(k + "T00:00:00"); return `${d.getDate()}/${d.getMonth()+1}`; };
-  for (const i of [...new Set([0, Math.floor((n-1)/2), n-1])])
-    svg += `<text class="t-axis" x="${x(i)}" y="${H-4}" text-anchor="${i===0?"start":(i===n-1?"end":"middle")}">${dlabel(weeks[i].key)}</text>`;
+  // abscisse : un trait par semaine, une date lisible (« 12 oct. ») toutes les 2–3 semaines, la dernière toujours
+  const dlabel = k => new Date(k + "T00:00:00").toLocaleDateString("fr-FR", {day:"numeric", month:"short"});
+  const step = Math.max(1, Math.ceil(n / 4));
+  for (let i = 0; i < n; i++){
+    const labeled = (n - 1 - i) % step === 0;
+    svg += `<line class="t-tick" x1="${x(i)}" x2="${x(i)}" y1="${y(0)}" y2="${y(0) + (labeled ? 5 : 3)}"/>`;
+    if (labeled) svg += `<text class="t-axis" x="${x(i)}" y="${H-6}" text-anchor="${i === n-1 ? "end" : (i === 0 ? "start" : "middle")}">${dlabel(weeks[i].key)}</text>`;
+  }
   // jokers : barres neutres sur le même axe des semaines
   const jok = weeks.map(h => h.stats.jokers ? h.stats.jokers.done : 0);
   const jmax = Math.max(1, ...jok);
@@ -1393,7 +1405,7 @@ function switchView(v){
   document.getElementById("view-"+v).classList.add("active");
   document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active", b.dataset.view===v));
   const ib = document.getElementById("infoBtn");
-  ib.classList.toggle("active", v === "info"); ib.setAttribute("aria-pressed", v === "info");
+  ib.setAttribute("aria-pressed", v === "info");
   if (v === "week") scrollToToday(); else window.scrollTo({top:0});
 }
 /* ℹ️ ouvre les Repères ; un nouvel appui ramène à la vue et à la position d'avant */
