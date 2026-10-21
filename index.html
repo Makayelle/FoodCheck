@@ -33,7 +33,6 @@
   --fs-lg:1.0625rem;  /* 17 px : titres de carte */
   --fs-xl:1.25rem;    /* 20 px : logo, emojis */
   --fs-2xl:1.45rem;   /* 23 px : emojis de la grille quotidienne */
-  --fs-icon:1.5rem;   /* 24 px : icône ℹ️ de l'en-tête */
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{font-size:16px}
@@ -56,8 +55,13 @@ main{padding:0 12px}
 .head-right{display:flex;align-items:center;gap:9px}
 .info-btn{
   border:none;background:none;margin:-9px;line-height:1;
-  width:44px;height:44px;border-radius:50%;font-size:var(--fs-icon);flex:none;
+  width:44px;height:44px;border-radius:50%;flex:none;
   display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;
+}
+.info-btn .i-dot{
+  width:22px;height:22px;border-radius:50%;border:2px solid var(--green);box-sizing:border-box;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Fredoka',sans-serif;font-weight:600;font-size:var(--fs-md);color:var(--green);
 }
 .info-btn:active{transform:scale(.9)}
 
@@ -232,8 +236,8 @@ h2{
 .bar-row .b-val{width:38px;text-align:right;font-weight:800}
 .bar-row .b-val.variety{width:auto;white-space:nowrap;font-size:var(--fs-xs)}
 /* ---- évolution : bouton 📈 dans l'en-tête de l'Historique, graphique en pop-up ---- */
-.card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
-.card-head .sub{margin-bottom:10px}
+.card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+.card-head .sub{margin-bottom:0}
 .icon-btn{
   flex:none;width:44px;height:44px;border:1.5px solid var(--line);border-radius:12px;background:#fff;
   font-size:var(--fs-xl);line-height:1;display:flex;align-items:center;justify-content:center;
@@ -307,7 +311,7 @@ body.no-scroll{overflow:hidden}
 }
 .set-row.target-row{
   background:var(--green-soft);border-radius:10px;border-bottom:none;
-  padding:9px 10px;margin-bottom:6px;
+  padding:9px 8px;margin:0 -8px 6px;
 }
 .set-row:last-child{border-bottom:none}
 .set-row .s-em{font-size:var(--fs-xl);flex:none;width:32px;text-align:center}
@@ -321,8 +325,9 @@ body.no-scroll{overflow:hidden}
 .stepper .val{width:30px;text-align:center;font-weight:800}
 .del-btn{
   flex:none;border:none;background:none;color:#B9432F;font-size:var(--fs-base);cursor:pointer;
-  padding:4px 6px;opacity:.7;
+  width:32px;height:32px;padding:0;opacity:.7;
 }
+.del-spacer{flex:none;width:32px}
 .add-row{display:flex;gap:6px;margin-top:12px}
 .add-row input{
   border:1.5px solid var(--line);border-radius:10px;padding:8px 10px;
@@ -383,7 +388,7 @@ nav button.active{color:var(--green)}
   <h1>🧲 FoodCheck</h1>
   <div class="head-right">
     <span class="week-label" id="weekLabel"></span>
-    <button class="info-btn" id="infoBtn" onclick="toggleInfo()" aria-label="Repères et recommandations" aria-pressed="false">ℹ️</button>
+    <button class="info-btn" id="infoBtn" onclick="toggleInfo()" aria-label="Repères et recommandations" aria-pressed="false"><span class="i-dot">i</span></button>
   </div>
 </header>
 
@@ -513,6 +518,7 @@ nav button.active{color:var(--green)}
   <div class="view" id="view-settings">
     <section class="card">
       <h2>💪 Renforcement musculaire</h2>
+      <p class="sub">Types de séances et nombre de pastilles proposées chaque semaine</p>
       <div id="setMuscu"></div>
       <div class="add-row">
         <input class="i-em" id="addMuscuEm" maxlength="4" placeholder="🏋️">
@@ -523,7 +529,8 @@ nav button.active{color:var(--green)}
     </section>
 
     <section class="card">
-      <h2>Féculents · objectifs de la semaine</h2>
+      <h2>Féculents</h2>
+      <p class="sub">Objectif de la semaine : varier les types · pastilles disponibles par aliment</p>
       <div class="set-row target-row">
         <span class="s-em">🎯</span>
         <span class="s-name">Cible variété (types différents)</span>
@@ -532,6 +539,7 @@ nav button.active{color:var(--green)}
           <span class="val" id="carbsVarietyTargetVal">6</span>
           <button onclick="stepCarbsVarietyTarget(1)" aria-label="plus">+</button>
         </div>
+        <span class="del-spacer"></span>
       </div>
       <div id="setCarbs"></div>
       <div class="add-row">
@@ -543,8 +551,8 @@ nav button.active{color:var(--green)}
     </section>
 
     <section class="card">
-      <h2>Protéines · objectifs de la semaine</h2>
-      <p class="sub">Nombre de pastilles disponibles chaque semaine</p>
+      <h2>Protéines</h2>
+      <p class="sub">Objectif de la semaine : nombre de portions · pastilles disponibles par aliment</p>
       <div class="set-row target-row">
         <span class="s-em">🎯</span>
         <span class="s-name">Cible hebdo (toutes sources)</span>
@@ -553,6 +561,7 @@ nav button.active{color:var(--green)}
           <span class="val" id="proteinsTargetVal">14</span>
           <button onclick="stepProteinsTarget(1)" aria-label="plus">+</button>
         </div>
+        <span class="del-spacer"></span>
       </div>
       <div id="setProteins"></div>
       <div class="add-row">
@@ -564,7 +573,8 @@ nav button.active{color:var(--green)}
     </section>
 
     <section class="card">
-      <h2>Variété micro · objectifs de la semaine</h2>
+      <h2>Variété micro</h2>
+      <p class="sub">Objectif de la semaine : pastilles disponibles par catégorie bonus</p>
       <div id="setMicro"></div>
       <div class="add-row">
         <input class="i-em" id="addMicroEm" maxlength="4" placeholder="🍇">
@@ -575,7 +585,8 @@ nav button.active{color:var(--green)}
     </section>
 
     <section class="card">
-      <h2>🃏 Jokers · budget de la semaine</h2>
+      <h2>🃏 Jokers</h2>
+      <p class="sub">Budget de la semaine : pastilles à dépenser par catégorie</p>
       <div id="setJokers"></div>
       <div class="add-row">
         <input class="i-em" id="addJokEm" maxlength="4" placeholder="🍔">
@@ -1261,7 +1272,14 @@ function closeTrend(){
   else hideTrend();
 }
 function backdropClose(e){ if (e.target === e.currentTarget) closeTrend(); }
-window.addEventListener("popstate", () => { if (trendOpen) hideTrend(); });
+/* Bouton retour d'Android : referme la pop-up ou les Repères au lieu de quitter l'app */
+let skipPop = false;
+if ("scrollRestoration" in history) history.scrollRestoration = "manual"; // c'est l'app qui replace le défilement
+window.addEventListener("popstate", () => {
+  if (skipPop){ skipPop = false; return; }
+  if (trendOpen) hideTrend();
+  else if (infoActive()) leaveInfo();
+});
 document.addEventListener("keydown", e => { if (e.key === "Escape" && trendOpen) closeTrend(); });
 function setTrendMetric(m){ trendMetric = m; renderTrend(); }
 function toggleTrendFeel(){ trendFeel = !trendFeel; renderTrend(); }
@@ -1455,6 +1473,7 @@ function resetWeek(){
   save(); renderAll(); toast("Semaine réinitialisée");
 }
 function switchView(v){
+  if (v !== "info" && infoActive() && history.state && history.state.info){ skipPop = true; history.back(); }
   document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));
   document.getElementById("view-"+v).classList.add("active");
   document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active", b.dataset.view===v));
@@ -1464,15 +1483,21 @@ function switchView(v){
 }
 /* ℹ️ ouvre les Repères ; un nouvel appui ramène à la vue et à la position d'avant */
 let infoReturn = null;
+const infoActive = () => document.getElementById("view-info").classList.contains("active");
+function leaveInfo(){
+  const r = infoReturn || {view:"week", y:null};
+  switchView(r.view);
+  if (r.y !== null) window.scrollTo({top: r.y});
+}
 function toggleInfo(){
-  if (document.getElementById("view-info").classList.contains("active")){
-    const r = infoReturn || {view:"week", y:null};
-    switchView(r.view);
-    if (r.y !== null) window.scrollTo({top: r.y});
+  if (infoActive()){
+    // passe par l'historique du navigateur : même chemin que le bouton retour d'Android
+    if (history.state && history.state.info) history.back(); else leaveInfo();
   } else {
     const cur = document.querySelector(".view.active").id.replace("view-","");
     infoReturn = {view: cur, y: window.scrollY};
     switchView("info");
+    history.pushState({info: true}, "");
   }
 }
 /* Centre le jour courant dans la zone visible (au-dessus de la barre d'onglets) :

@@ -6,6 +6,14 @@ Les choix écartés sont notés en bas, pour ne pas les rediscuter.
 
 ---
 
+## v36 — 2026-10-21 · Finitions en-têtes, ℹ️, Réglages
+- Historique : bouton 📈 centré en hauteur avec le titre et le sous-titre, et plus d'espace avant la première semaine.
+- ℹ️ remplacé par un **« i » cerclé** vert (police Fredoka, 22 px, zone tactile 44 px). L'emoji, un carré bleu, détonnait avec la palette, et sa taille était difficile à doser.
+- Bouton **retour d'Android** dans les Repères : il ramène à la vue et à la position d'avant au lieu de quitter l'app. Il ferme aussi la pop-up Évolution.
+- Réglages : chaque carte a un sous-titre en lien avec son thème. Les notions « objectif / budget de la semaine » passent du titre au sous-titre (« Féculents », « Protéines », « Variété micro », « 🃏 Jokers »).
+- Réglages : la ligne de cible (🎯) a les mêmes bords que les lignes d'aliments, avec une colonne vide à la place du ✕. Le chiffre et les boutons − / + sont alignés.
+- Préservé : données, calculs.
+
 ## v35 — 2026-10-21 · Évolution en pop-up
 - L'évolution n'est plus une ligne repliée au-dessus des semaines, où elle se noyait dans la lecture : elle s'ouvre avec un **bouton 📈** à droite du titre « Semaines passées », dans le style des boutons de l'app.
 - Elle s'affiche en **pop-up** sur un fond assombri, pour faire le focus. On la ferme avec ✕, en touchant le fond, avec le bouton retour d'Android ou avec Échap.

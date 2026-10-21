@@ -45,8 +45,8 @@ Seule ressource externe : Google Fonts (Fredoka, Nunito), mise en cache par le s
 |---|---|---|
 | `view-week` | onglet Semaine (s'ouvre avec **aujourd'hui centré** à l'écran, `scrollToToday()`) | Quêtes, Chaque jour (grille 2×4 + check-in ⚡😊), Renforcement, Féculents, Protéines, Variété micro, Jokers, teaser "Repères rapides" |
 | `view-history` | onglet Historique | Bouton 📈 à droite du titre → pop-up « Évolution » (`openTrend()`/`closeTrend()`, fond assombri, fermeture ✕ / fond / retour Android ; `renderTrend()` : courbe 12 semaines, métrique au choix, ressenti ⚡😊 superposable + corrélation, jokers en barres neutres), puis une carte par semaine archivée, repliable ; la plus récente dépliée au démarrage |
-| `view-settings` | onglet Réglages | Sections **dans le même ordre que la vue Semaine** : Renforcement, Féculents, Protéines, Variété micro, Jokers, puis Quantités recommandées, puis Semaine en cours |
-| `view-info` | icône ℹ️ de l'en-tête, en bascule (`toggleInfo()` : un 2ᵉ appui ramène à la vue et à la position d'avant ; pas de bouton Retour) | Repères PNNS/OMS, repères de portion, liens mangerbouger.fr / santepubliquefrance.fr |
+| `view-settings` | onglet Réglages | Chaque carte : titre court + sous-titre (« Objectif / Budget de la semaine : … ») ; ligne cible 🎯 alignée sur les lignes d'aliments (`.del-spacer`). Sections **dans le même ordre que la vue Semaine** : Renforcement, Féculents, Protéines, Variété micro, Jokers, puis Quantités recommandées, puis Semaine en cours |
+| `view-info` | « i » cerclé de l'en-tête, en bascule (`toggleInfo()` : un 2ᵉ appui **ou le retour Android** ramène à la vue et à la position d'avant, via `history.pushState` ; pas de bouton Retour) | Repères PNNS/OMS, repères de portion, liens mangerbouger.fr / santepubliquefrance.fr |
 
 ## Modèle de données
 
@@ -105,12 +105,12 @@ Choix nutritionnels assumés à ne pas défaire :
 
 1. **Les ids sont éternels.** Ne jamais renommer un `id` d'aliment, de groupe ou de quête : il indexe les données de l'utilisateur. Pour changer un libellé, modifier `name` (et `SHORT_NAMES` pour l'affichage en carte).
 2. **Toute évolution de structure passe par `migrate(s)`.** Les étapes doivent être idempotentes, commentées avec la version (`// v27 → v28 : …`), et **préserver les pastilles déjà cochées** (redimensionner les tableaux en tronquant/complétant, ne jamais les recréer vides). Une nouvelle entrée par défaut doit aussi être ajoutée à `DEFAULT_CONFIG` et à `SHORT_NAMES`.
-3. **Bumper `CACHE` dans `sw.js` à chaque déploiement** (`nutri-suivi-vN`, actuellement v35). Sans ça, la PWA installée continue de servir l'ancienne version hors-ligne. **Ajouter l'entrée correspondante en tête de `CHANGELOG.md`** (quoi, pourquoi, ce qui est préservé) ; noter aussi les idées écartées dans « Décisions écartées ».
+3. **Bumper `CACHE` dans `sw.js` à chaque déploiement** (`nutri-suivi-vN`, actuellement v36). Sans ça, la PWA installée continue de servir l'ancienne version hors-ligne. **Ajouter l'entrée correspondante en tête de `CHANGELOG.md`** (quoi, pourquoi, ce qui est préservé) ; noter aussi les idées écartées dans « Décisions écartées ».
 4. **Dates en local.** Utiliser `weekKey()` / `isoLocal()`, jamais `toISOString()` : en France, lundi 00:00 = dimanche 22:00 UTC.
 5. **Échapper tout texte saisi** par l'utilisateur avec `esc()` avant de l'injecter en HTML.
 6. **Emojis** : éviter les emojis Unicode 13+ (🫒 🫘 …), mal affichés sur certains appareils. Pas de doublon d'emoji dans un même pool.
 7. **Ordre des sections** : Réglages suit toujours l'ordre de la vue Semaine. Dans Variété micro, les paires restent côte à côte (grille 2 colonnes) : noix | autres oléagineux, huile colza | huile olive.
-8. **Style** : réutiliser les variables CSS de `:root` (`--green`, `--amber`, `--line`, `--green-soft`…). Texte ambre : `--amber-ink` (`--amber` seul ne passe pas le contraste AA). Tailles de police : **uniquement l'échelle `--fs-xs` … `--fs-2xl`** (+ `--fs-icon` pour ℹ️) (min 12 px, contrôlé par le script). Le vert de fond (`--green-soft`) signifie « accompli / actif » : ne pas l'utiliser pour un état neutre. Zones tactiles ≥ 24 px (viser 44), quitte à garder un visuel plus petit (cf. `.dot::before`, `.info-btn`). Avant d'ajouter une règle CSS, vérifier qu'aucune règle existante ne cible le même sélecteur : un doublon oublié a déjà cassé une mise en page.
+8. **Style** : réutiliser les variables CSS de `:root` (`--green`, `--amber`, `--line`, `--green-soft`…). Texte ambre : `--amber-ink` (`--amber` seul ne passe pas le contraste AA). Tailles de police : **uniquement l'échelle `--fs-xs` … `--fs-2xl`** (min 12 px, contrôlé par le script). Le vert de fond (`--green-soft`) signifie « accompli / actif » : ne pas l'utiliser pour un état neutre. Zones tactiles ≥ 24 px (viser 44), quitte à garder un visuel plus petit (cf. `.dot::before`, `.info-btn` dont le « i » cerclé est dessiné en CSS). Avant d'ajouter une règle CSS, vérifier qu'aucune règle existante ne cible le même sélecteur : un doublon oublié a déjà cassé une mise en page.
 9. Rester en **fichier unique**, vanilla JS, sans dépendance ni étape de build.
 
 ## Validation avant chaque commit
