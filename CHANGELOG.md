@@ -6,6 +6,13 @@ Les choix écartés sont notés en bas, pour ne pas les rediscuter.
 
 ---
 
+## v35 — 2026-10-21 · Évolution en pop-up
+- L'évolution n'est plus une ligne repliée au-dessus des semaines, où elle se noyait dans la lecture : elle s'ouvre avec un **bouton 📈** à droite du titre « Semaines passées », dans le style des boutons de l'app.
+- Elle s'affiche en **pop-up** sur un fond assombri, pour faire le focus. On la ferme avec ✕, en touchant le fond, avec le bouton retour d'Android ou avec Échap.
+- Le bouton 📈 est masqué tant qu'aucune semaine n'est archivée.
+- ℹ️ ramené à une taille intermédiaire (24 px).
+- Préservé : données, calculs.
+
 ## v34 — 2026-10-21
 - Évolution : légende, phrase de corrélation et titre des jokers centrés sous le graphique.
 - Préservé : données, calculs.
