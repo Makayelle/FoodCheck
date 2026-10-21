@@ -60,16 +60,14 @@ main{padding:0 12px}
   display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;
 }
 .info-btn:active{transform:scale(.9)}
+/* vue Repères ouverte : anneau vert, un nouvel appui referme */
+.info-btn.active{background:radial-gradient(circle,var(--green-soft) 10.5px,var(--green) 11px 13px,transparent 13.5px)}
 
 /* ---- teaser repères (vue Semaine) + retour vers l'info complète ---- */
 .see-all-link{
   display:block;width:100%;margin-top:10px;border:none;background:none;
   color:var(--green);font-weight:800;font-size:var(--fs-sm);font-family:inherit;
   text-align:center;padding:13px 0;cursor:pointer;
-}
-.back-link{
-  border:none;background:none;color:var(--ink-soft);font-weight:800;
-  font-size:var(--fs-sm);font-family:inherit;padding:0 0 10px;cursor:pointer;
 }
 
 /* ---- vue info : liste PNNS ---- */
@@ -322,7 +320,7 @@ nav button.active{color:var(--green)}
   <h1>🧲 FoodCheck</h1>
   <div class="head-right">
     <span class="week-label" id="weekLabel"></span>
-    <button class="info-btn" onclick="switchView('info')" aria-label="Repères et recommandations">ℹ️</button>
+    <button class="info-btn" id="infoBtn" onclick="toggleInfo()" aria-label="Repères et recommandations" aria-pressed="false">ℹ️</button>
   </div>
 </header>
 
@@ -386,14 +384,13 @@ nav button.active{color:var(--green)}
         <div class="memo-row"><span class="m-icon">🍗</span><span class="m-name">Protéine</span><span>≈ 1 paume de main</span></div>
         <div class="memo-row"><span class="m-icon">🏃</span><span class="m-name">Bouger</span><span>30 min dynamique</span></div>
       </div>
-      <button class="see-all-link" onclick="switchView('info')">Voir tous les repères →</button>
+      <button class="see-all-link" onclick="toggleInfo()">Voir tous les repères →</button>
     </section>
   </div>
 
   <!-- ================= VUE INFO / PNNS ================= -->
   <div class="view" id="view-info">
     <section class="card">
-      <button class="back-link" onclick="switchView('week')">← Retour</button>
       <h2>🥗 Repères PNNS</h2>
       <p class="sub">Le Programme National Nutrition Santé, résumé simplement</p>
       <div class="pnns-list">
@@ -1243,13 +1240,31 @@ function switchView(v){
   document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));
   document.getElementById("view-"+v).classList.add("active");
   document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active", b.dataset.view===v));
+  const ib = document.getElementById("infoBtn");
+  ib.classList.toggle("active", v === "info"); ib.setAttribute("aria-pressed", v === "info");
   if (v === "week") scrollToToday(); else window.scrollTo({top:0});
 }
-/* Amène le jour courant en haut de l'écran (les quêtes restent accessibles en remontant) */
+/* ℹ️ ouvre les Repères ; un nouvel appui ramène à la vue et à la position d'avant */
+let infoReturn = null;
+function toggleInfo(){
+  if (document.getElementById("view-info").classList.contains("active")){
+    const r = infoReturn || {view:"week", y:null};
+    switchView(r.view);
+    if (r.y !== null) window.scrollTo({top: r.y});
+  } else {
+    const cur = document.querySelector(".view.active").id.replace("view-","");
+    infoReturn = {view: cur, y: window.scrollY};
+    switchView("info");
+  }
+}
+/* Centre le jour courant dans la zone visible (au-dessus de la barre d'onglets) :
+   on voit la veille au-dessus et le lendemain en dessous */
 function scrollToToday(){
   const el = document.querySelector("#view-week .day-block.today");
   if (!el) return window.scrollTo({top:0});
-  window.scrollTo({top: Math.max(0, el.getBoundingClientRect().top + window.scrollY - 8)});
+  const r = el.getBoundingClientRect();
+  const visibleH = window.innerHeight - document.querySelector("nav").offsetHeight;
+  window.scrollTo({top: Math.max(0, r.top + window.scrollY - (visibleH - r.height) / 2)});
 }
 let toastTimer = null;
 function toast(msg){
