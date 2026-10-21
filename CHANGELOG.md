@@ -6,6 +6,11 @@ Les choix écartés sont notés en bas, pour ne pas les rediscuter.
 
 ---
 
+## v33 — 2026-10-21 · ℹ️ agrandi, axes du graphique
+- ℹ️ sans cercle ni anneau vert : l'icône seule, agrandie à la taille de sa zone tactile (32 px, nouveau `--fs-icon`).
+- Axes de l'évolution plus clairs : ordonnée en % avec repères 0 · 50 · 80 · 100, et zone ≥ 80 % légèrement teintée en vert (même seuil que les barres) ; ressenti gradué 1–5 avec l'unité « /5 » ; abscisse avec un trait par semaine et des dates lisibles (« 12 oct. »), la dernière toujours affichée.
+- Préservé : données, calculs.
+
 ## v32 — 2026-10-21 · Évolution : ajustements
 - Filtres de la courbe sur une grille de 4 colonnes en pleine largeur (il restait un vide à droite).
 - Plus de saccade au toucher de ⚡😊 : la largeur du graphique est fixe, et la place de la légende et de la phrase de corrélation est toujours réservée (masquée sans le ressenti).
