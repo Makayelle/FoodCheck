@@ -6,6 +6,13 @@ Les choix écartés sont notés en bas, pour ne pas les rediscuter.
 
 ---
 
+## v38 — 2026-10-31 · 🧺 à la suite du titre
+- Le bouton 🧺 passe de la droite de la carte à un **petit bouton cadré juste après « Quêtes de la semaine »** (30×28 px, zone tactile élargie à ~46 px). Choix issu d'une critique design :
+  - à droite, il se disputait la place avec la pastille 1/13 et cassait la structure d'en-tête commune aux cartes de la vue Semaine ;
+  - un emoji de titre cliquable aurait été invisible comme bouton, puisque les emojis de titre sont décoratifs partout ailleurs.
+- 📈 reste à droite dans l'Historique : cette carte n'a pas de pastille, donc pas de conflit.
+- Préservé : données, calculs.
+
 ## v37 — 2026-10-31 · Ce qu'il manque pour les quêtes
 - Bouton discret **🧺** à droite du titre « Quêtes de la semaine » (même style que 📈) : il ouvre une pop-up **« Ce qu'il manque »**.
 - La liste est organisée **par aliment**, pas par quête, pour se projeter sur une recette : « 🥬 Légume feuillu ×3 → Folates · Fer · Calcium ». Les aliments qui font avancer le plus de quêtes sont en haut. Deux groupes : « À cuisiner cette semaine » (réserves) et « Au quotidien » (grille). On n'a plus besoin de faire des allers-retours entre les quêtes et les pastilles.
