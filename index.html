@@ -258,6 +258,16 @@ h2{
 }
 .modal.open .modal-card{transform:none}
 .modal-card > h2{padding-right:40px}
+/* ---- pop-up « Ce qu'il manque » (quêtes) ---- */
+.miss-group{font-size:var(--fs-xs);font-weight:800;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin:12px 0 4px}
+.miss-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line)}
+.miss-row:last-child{border-bottom:none}
+.miss-em{font-size:var(--fs-xl);width:32px;text-align:center;flex:none}
+.miss-main{flex:1;min-width:0}
+.miss-name{font-weight:800;font-size:var(--fs-md);color:var(--ink)}
+.miss-for{font-size:var(--fs-xs);color:var(--ink-soft);font-weight:700;margin-top:1px}
+.miss-n{flex:none;font-weight:800;font-size:var(--fs-sm);color:var(--amber-ink);background:#F9F1E1;border-radius:99px;padding:2px 9px}
+.miss-done{text-align:center;padding:24px 8px;font-size:var(--fs-md);color:var(--ink-soft);line-height:1.6}
 .modal-close{
   position:absolute;top:6px;right:6px;width:44px;height:44px;border:none;background:none;
   font-size:var(--fs-xl);color:var(--ink-soft);cursor:pointer;line-height:1;
@@ -397,9 +407,14 @@ nav button.active{color:var(--green)}
   <div class="view active" id="view-week">
 
     <section class="card">
-      <span class="progress-pill" id="questPill"></span>
-      <h2>🎯 Quêtes de la semaine</h2>
-      <p class="sub">Couverture estimée en vitamines & minéraux — touchez une quête pour voir comment l'accomplir</p>
+      <div class="card-head">
+        <div>
+          <span class="progress-pill" id="questPill"></span>
+          <h2>🎯 Quêtes de la semaine</h2>
+          <p class="sub">Couverture estimée en vitamines & minéraux — touchez une quête pour voir comment l'accomplir</p>
+        </div>
+        <button class="icon-btn" onclick="openMissing()" aria-label="Voir ce qu'il manque pour compléter les quêtes">🧺</button>
+      </div>
       <div class="quests" id="questGrid"></div>
     </section>
 
@@ -621,9 +636,17 @@ nav button.active{color:var(--green)}
   <button data-view="settings" onclick="switchView('settings')"><span class="n-em">⚙️</span>Réglages</button>
 </nav>
 
+<div class="modal" id="missingModal" onclick="backdropClose(event)" aria-hidden="true">
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="missingTitle">
+    <button class="modal-close" onclick="closeModal()" aria-label="Fermer">✕</button>
+    <h2 id="missingTitle">🧺 Ce qu'il manque</h2>
+    <p class="sub" id="missingSub"></p>
+    <div id="missingBox"></div>
+  </div>
+</div>
 <div class="modal" id="trendModal" onclick="backdropClose(event)" aria-hidden="true">
   <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="trendTitle">
-    <button class="modal-close" onclick="closeTrend()" aria-label="Fermer">✕</button>
+    <button class="modal-close" onclick="closeModal()" aria-label="Fermer">✕</button>
     <h2 id="trendTitle">📈 Évolution</h2>
     <p class="sub">Les 12 dernières semaines archivées</p>
     <div id="trendBox"></div>
@@ -1076,6 +1099,29 @@ function weekScore(st){
   for (const c of weekCats(st)){ wsum += pctOf(c[1]) * c[3]; wtot += c[3]; }
   return wtot ? wsum / wtot : 0;
 }
+/* Ce qu'il manque pour compléter les quêtes, regroupé par aliment / catégorie.
+   Les poids d'une quête font 1 et chaque source est plafonnée à son besoin : une quête
+   n'est donc complète que si TOUTES ses sources le sont — le reste dû par source est exact.
+   Une même pastille peut servir plusieurs quêtes (besoins différents) : on retient le plus
+   grand besoin. Tri : aliments qui font avancer le plus de quêtes d'abord. */
+function missingForQuests(week){
+  const items = new Map();
+  for (const q of QUESTS){
+    if (questProgress(week, q) >= 1) continue;
+    for (const src of q.srcs){
+      const done = srcDone(week, src);
+      if (done >= src.need) continue;
+      const key = src.g + "|" + src.id;
+      const it = items.get(key) || {g: src.g, id: src.id, need: 0, done, quests: []};
+      it.need = Math.max(it.need, src.need);
+      it.quests.push(q.id);
+      items.set(key, it);
+    }
+  }
+  return [...items.values()]
+    .map(it => ({...it, remaining: it.need - it.done}))
+    .sort((a, b) => b.quests.length - a.quests.length || b.remaining - a.remaining);
+}
 /* Corrélation de Pearson (null si moins de 4 points ou variance nulle) */
 function pearson(xs, ys){
   const n = xs.length;
@@ -1254,33 +1300,71 @@ function trendValue(st, metric){
   return c ? pctOf(c[1]) : null;
 }
 /* Pop-up : ✕, toucher le fond ou le bouton retour d'Android referment */
-function openTrend(){
-  trendOpen = true; renderTrend();
-  const m = document.getElementById("trendModal");
+/* Pop-ups (Évolution, Ce qu'il manque) : fond assombri ; ✕, toucher le fond,
+   Échap ou le bouton retour d'Android referment */
+let openModalId = null;
+function showModal(id){
+  openModalId = id;
+  const m = document.getElementById(id);
   m.classList.add("open"); m.setAttribute("aria-hidden", "false");
   document.body.classList.add("no-scroll");
-  history.pushState({trend: true}, "");
+  history.pushState({modal: id}, "");
 }
-function hideTrend(){
-  trendOpen = false;
-  const m = document.getElementById("trendModal");
+function hideModal(){
+  if (!openModalId) return;
+  const m = document.getElementById(openModalId);
   m.classList.remove("open"); m.setAttribute("aria-hidden", "true");
   document.body.classList.remove("no-scroll");
+  if (openModalId === "trendModal") trendOpen = false;
+  openModalId = null;
 }
-function closeTrend(){
-  if (history.state && history.state.trend) history.back(); // déclenche popstate → hideTrend
-  else hideTrend();
+function closeModal(){
+  if (history.state && history.state.modal) history.back(); // déclenche popstate → hideModal
+  else hideModal();
 }
-function backdropClose(e){ if (e.target === e.currentTarget) closeTrend(); }
+function backdropClose(e){ if (e.target === e.currentTarget) closeModal(); }
+function openTrend(){ trendOpen = true; renderTrend(); showModal("trendModal"); }
+function openMissing(){ renderMissing(); showModal("missingModal"); }
 /* Bouton retour d'Android : referme la pop-up ou les Repères au lieu de quitter l'app */
 let skipPop = false;
 if ("scrollRestoration" in history) history.scrollRestoration = "manual"; // c'est l'app qui replace le défilement
 window.addEventListener("popstate", () => {
   if (skipPop){ skipPop = false; return; }
-  if (trendOpen) hideTrend();
+  if (openModalId) hideModal();
   else if (infoActive()) leaveInfo();
 });
-document.addEventListener("keydown", e => { if (e.key === "Escape" && trendOpen) closeTrend(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && openModalId) closeModal(); });
+const DAILY_MISSING = {veg:["🥕","Légumes"], fruit:["🍎","Fruits"], dairy:["🥛","Produits laitiers"],
+  vegfruit:["🥗","Fruits & légumes"], move:["🏃","Jours avec 30 min d'activité"]};
+function renderMissing(){
+  const list = missingForQuests(state.week);
+  const doneN = QUESTS.length - new Set(list.flatMap(it => it.quests)).size;
+  document.getElementById("missingSub").textContent =
+    `Pour compléter les quêtes de la semaine · ${doneN}/${QUESTS.length} accomplies`;
+  const box = document.getElementById("missingBox");
+  if (!list.length){
+    box.innerHTML = `<p class="miss-done">🎉 Toutes les quêtes sont accomplies cette semaine.</p>`;
+    return;
+  }
+  const label = it => {
+    if (it.g === "daily") return DAILY_MISSING[it.id] || ["•", it.id];
+    if (it.id === "__animal") return ["🍗", "Protéine animale (au choix)"];
+    const f = (state.config[it.g] || []).find(x => x.id === it.id) || (DEFAULT_CONFIG[it.g] || []).find(x => x.id === it.id);
+    return f ? [esc(f.emoji), esc(shortName(f))] : ["•", it.id];
+  };
+  const row = it => {
+    const [em, name] = label(it);
+    const qs = it.quests.map(id => QUESTS.find(q => q.id === id).name).join(" · ");
+    return `<div class="miss-row"><span class="miss-em">${em}</span>
+      <div class="miss-main"><div class="miss-name">${name}</div><div class="miss-for">→ ${qs}</div></div>
+      <span class="miss-n">×${it.remaining}</span></div>`;
+  };
+  const pools = list.filter(it => it.g !== "daily"), daily = list.filter(it => it.g === "daily");
+  box.innerHTML =
+    (pools.length ? `<div class="miss-group">À cuisiner cette semaine</div>${pools.map(row).join("")}` : "")
+    + (daily.length ? `<div class="miss-group">Au quotidien (sur la semaine)</div>${daily.map(row).join("")}` : "")
+    + `<p class="hint">💡 Une pastille cochée fait avancer toutes les quêtes de sa ligne. Les plus utiles sont en haut.</p>`;
+}
 function setTrendMetric(m){ trendMetric = m; renderTrend(); }
 function toggleTrendFeel(){ trendFeel = !trendFeel; renderTrend(); }
 function renderTrend(){

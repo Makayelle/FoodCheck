@@ -86,11 +86,11 @@ const ctx = vm.createContext({ structuredClone, console, localStorage: {
   getItem: k => store[k] ?? null, setItem: (k, v) => { store[k] = String(v); } } });
 let T = null;
 check("chargement partie données", () => {
-  vm.runInContext(dataJs + ";globalThis.T={STORE_KEY,DEFAULT_CONFIG,SHORT_NAMES,GROUPS,QUESTS,freshWeek,computeStats,questProgress,migrate,load,weekKey,applyRecommendedCounts,weekScore,pearson}", ctx);
+  vm.runInContext(dataJs + ";globalThis.T={STORE_KEY,DEFAULT_CONFIG,SHORT_NAMES,GROUPS,QUESTS,freshWeek,computeStats,questProgress,migrate,load,weekKey,applyRecommendedCounts,weekScore,pearson,missingForQuests}", ctx);
   T = ctx.T;
 });
 if (T) {
-  const { STORE_KEY, DEFAULT_CONFIG, SHORT_NAMES, GROUPS, QUESTS, freshWeek, computeStats, questProgress, migrate, load, weekKey, applyRecommendedCounts, weekScore, pearson } = T;
+  const { STORE_KEY, DEFAULT_CONFIG, SHORT_NAMES, GROUPS, QUESTS, freshWeek, computeStats, questProgress, migrate, load, weekKey, applyRecommendedCounts, weekScore, pearson, missingForQuests } = T;
   const fresh = () => { const c = structuredClone(DEFAULT_CONFIG); return [c, freshWeek(c)]; };
   const q = id => QUESTS.find(x => x.id === id);
 
@@ -180,6 +180,22 @@ if (T) {
     w.pools.jokers.alcool.fill(false);
     assert.equal(weekScore(computeStats(w, c)), weekScore(st), "les jokers ne doivent pas changer le score");
   });
+  check("ce qu'il manque : par aliment, plus grand besoin, vide si tout est fait", () => {
+    const [c, w] = fresh();
+    let m = missingForQuests(w);
+    const pg = m.find(it => it.id === "poissongras");
+    assert.deepEqual([...pg.quests].sort(), ["o3", "vitd"]); assert.equal(pg.remaining, 1);
+    const noix = m.find(it => it.id === "noix");                 // besoin 3 (Oméga-3) et 4 (Mg, Vit. E) → 4
+    assert.equal(noix.remaining, 4); assert.equal(noix.quests.length, 3);
+    assert.ok(m[0].quests.length >= m.at(-1).quests.length, "tri par nombre de quêtes");
+    w.pools.proteins.poissongras.fill(true);
+    m = missingForQuests(w);
+    assert.ok(!m.some(it => it.id === "poissongras"));
+    assert.ok(!m.some(it => it.quests.includes("vitd")), "quête accomplie absente");
+    for (const k in w.daily) for (const cat in w.daily[k]) w.daily[k][cat].fill(true);
+    for (const g of ["proteins", "carbs", "micro", "muscu"]) for (const id in w.pools[g]) w.pools[g][id].fill(true);
+    assert.equal(missingForQuests(w).length, 0);
+  });
   check("corrélation score ↔ ressenti", () => {
     assert.equal(pearson([1, 2, 3], [1, 2, 3]), null, "< 4 points → null");
     assert.ok(Math.abs(pearson([10, 20, 30, 40], [2, 3, 4, 5]) - 1) < 1e-9);
@@ -250,7 +266,7 @@ if (process.argv.includes("--render")) {
       if (over > 0) fails.push(`✗ rendu ${v} : débordement horizontal de ${over}px`); else passed++;
     }
     await p.evaluate(() => switchView("week"));
-    for (const el of (await p.$$("#view-week [onclick]")).slice(0, 40)) await el.click({ timeout: 300 }).catch(() => {});
+    for (const el of (await p.$$("#view-week [onclick]:not(.icon-btn)")).slice(0, 40)) await el.click({ timeout: 300 }).catch(() => {});
     const small = await p.evaluate(() => [...document.querySelectorAll("#view-week button, header button, nav button")]
       .map(e => e.getBoundingClientRect()).filter(r => r.width && (r.width < 24 || r.height < 24)).length);
     if (small) fails.push(`✗ rendu : ${small} zone(s) tactile(s) < 24 px (WCAG 2.2)`); else passed++;

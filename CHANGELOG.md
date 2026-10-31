@@ -6,6 +6,13 @@ Les choix écartés sont notés en bas, pour ne pas les rediscuter.
 
 ---
 
+## v37 — 2026-10-31 · Ce qu'il manque pour les quêtes
+- Bouton discret **🧺** à droite du titre « Quêtes de la semaine » (même style que 📈) : il ouvre une pop-up **« Ce qu'il manque »**.
+- La liste est organisée **par aliment**, pas par quête, pour se projeter sur une recette : « 🥬 Légume feuillu ×3 → Folates · Fer · Calcium ». Les aliments qui font avancer le plus de quêtes sont en haut. Deux groupes : « À cuisiner cette semaine » (réserves) et « Au quotidien » (grille). On n'a plus besoin de faire des allers-retours entre les quêtes et les pastilles.
+- Le calcul est exact : une quête n'est complète que si toutes ses sources le sont. Quand une pastille sert plusieurs quêtes, on retient le plus grand besoin (`missingForQuests()`, testé dans `validate.mjs`).
+- Les pop-ups sont factorisées (`showModal` / `closeModal`) : Évolution et Ce qu'il manque se ferment de la même façon (✕, fond, retour Android, Échap).
+- Préservé : données, calculs.
+
 ## v36 — 2026-10-21 · Finitions en-têtes, ℹ️, Réglages
 - Historique : bouton 📈 centré en hauteur avec le titre et le sous-titre, et plus d'espace avant la première semaine.
 - ℹ️ remplacé par un **« i » cerclé** vert (police Fredoka, 22 px, zone tactile 44 px). L'emoji, un carré bleu, détonnait avec la palette, et sa taille était difficile à doser.
