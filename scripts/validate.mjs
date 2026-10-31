@@ -266,7 +266,7 @@ if (process.argv.includes("--render")) {
       if (over > 0) fails.push(`✗ rendu ${v} : débordement horizontal de ${over}px`); else passed++;
     }
     await p.evaluate(() => switchView("week"));
-    for (const el of (await p.$$("#view-week [onclick]:not(.icon-btn)")).slice(0, 40)) await el.click({ timeout: 300 }).catch(() => {});
+    for (const el of (await p.$$("#view-week [onclick]:not(.icon-btn):not(.title-btn)")).slice(0, 40)) await el.click({ timeout: 300 }).catch(() => {});
     const small = await p.evaluate(() => [...document.querySelectorAll("#view-week button, header button, nav button")]
       .map(e => e.getBoundingClientRect()).filter(r => r.width && (r.width < 24 || r.height < 24)).length);
     if (small) fails.push(`✗ rendu : ${small} zone(s) tactile(s) < 24 px (WCAG 2.2)`); else passed++;

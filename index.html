@@ -245,6 +245,15 @@ h2{
 }
 .icon-btn:active{transform:scale(.92);background:var(--paper)}
 .icon-btn[hidden]{display:none}
+/* petit bouton à la suite d'un titre de carte (même cadre que .icon-btn, zone tactile élargie) */
+.title-btn{
+  position:relative;display:inline-flex;align-items:center;justify-content:center;
+  width:30px;height:28px;margin-left:6px;vertical-align:2px;padding:0;cursor:pointer;
+  border:1.5px solid var(--line);border-radius:9px;background:#fff;box-shadow:0 1px 0 var(--line);
+  font-size:var(--fs-base);line-height:1;
+}
+.title-btn::after{content:"";position:absolute;inset:-9px -8px}
+.title-btn:active{transform:scale(.92);background:var(--paper)}
 .modal{
   position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;
   padding:16px 12px calc(16px + env(safe-area-inset-bottom));
@@ -407,14 +416,9 @@ nav button.active{color:var(--green)}
   <div class="view active" id="view-week">
 
     <section class="card">
-      <div class="card-head">
-        <div>
-          <span class="progress-pill" id="questPill"></span>
-          <h2>🎯 Quêtes de la semaine</h2>
-          <p class="sub">Couverture estimée en vitamines & minéraux — touchez une quête pour voir comment l'accomplir</p>
-        </div>
-        <button class="icon-btn" onclick="openMissing()" aria-label="Voir ce qu'il manque pour compléter les quêtes">🧺</button>
-      </div>
+      <span class="progress-pill" id="questPill"></span>
+      <h2>🎯 Quêtes de la semaine <button class="title-btn" onclick="openMissing()" aria-label="Voir ce qu'il manque pour compléter les quêtes">🧺</button></h2>
+      <p class="sub">Couverture estimée en vitamines & minéraux — touchez une quête pour voir comment l'accomplir</p>
       <div class="quests" id="questGrid"></div>
     </section>
 
