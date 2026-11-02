@@ -260,13 +260,24 @@ if (process.argv.includes("--render")) {
     p.on("pageerror", e => errs.push(e.message));
     await p.route(/fonts\.g/, r => r.fulfill({ body: "" })); // pas de réseau requis
     await p.goto("file://" + path.join(ROOT, "index.html"));
-    for (const v of ["week", "history", "settings", "info"]) {
+    for (const v of ["week", "history", "settings"]) {
       await p.evaluate(v => switchView(v), v);
       const over = await p.evaluate(() => document.documentElement.scrollWidth - innerWidth);
       if (over > 0) fails.push(`✗ rendu ${v} : débordement horizontal de ${over}px`); else passed++;
     }
+    // pop-ups : s'ouvrent, ne débordent pas, se referment
+    for (const [opener, id] of [["openInfo", "infoModal"], ["openMissing", "missingModal"], ["openTrend", "trendModal"]]) {
+      const r = await p.evaluate(([o, id]) => {
+        window[o]();
+        const m = document.getElementById(id), c = m.querySelector(".modal-card");
+        const res = {open: m.classList.contains("open"), over: c.scrollWidth - c.clientWidth};
+        hideModal();
+        return {...res, closed: !m.classList.contains("open")};
+      }, [opener, id]);
+      if (!r.open || !r.closed || r.over > 0) fails.push(`✗ pop-up ${id} : ouverte=${r.open} refermée=${r.closed} débordement=${r.over}px`); else passed++;
+    }
     await p.evaluate(() => switchView("week"));
-    for (const el of (await p.$$("#view-week [onclick]:not(.icon-btn):not(.title-btn)")).slice(0, 40)) await el.click({ timeout: 300 }).catch(() => {});
+    for (const el of (await p.$$("#view-week [onclick]:not(.icon-btn):not(.title-btn):not(.see-all-link)")).slice(0, 40)) await el.click({ timeout: 300 }).catch(() => {});
     const small = await p.evaluate(() => [...document.querySelectorAll("#view-week button, header button, nav button")]
       .map(e => e.getBoundingClientRect()).filter(r => r.width && (r.width < 24 || r.height < 24)).length);
     if (small) fails.push(`✗ rendu : ${small} zone(s) tactile(s) < 24 px (WCAG 2.2)`); else passed++;

@@ -267,6 +267,11 @@ h2{
 }
 .modal.open .modal-card{transform:none}
 .modal-card > h2{padding-right:40px}
+/* pop-up Repères : plusieurs sections séparées d'un trait */
+.modal-sec{border-top:1px dashed var(--line);margin-top:16px;padding-top:14px}
+.modal-sec:first-of-type{border-top:none;margin-top:0;padding-top:0}
+.modal-sec:first-of-type > h2{padding-right:40px}
+.modal-card > .sub,.modal-sec:first-of-type > .sub{padding-right:34px}
 /* ---- pop-up « Ce qu'il manque » (quêtes) ---- */
 .miss-group{font-size:var(--fs-xs);font-weight:800;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin:12px 0 4px}
 .miss-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line)}
@@ -277,9 +282,12 @@ h2{
 .miss-for{font-size:var(--fs-xs);color:var(--ink-soft);font-weight:700;margin-top:1px}
 .miss-n{flex:none;font-weight:800;font-size:var(--fs-sm);color:var(--amber-ink);background:#F9F1E1;border-radius:99px;padding:2px 9px}
 .miss-done{text-align:center;padding:24px 8px;font-size:var(--fs-md);color:var(--ink-soft);line-height:1.6}
+/* ✕ collant : reste visible quand on fait défiler une pop-up longue (Repères) ;
+   marges négatives pour ne pas pousser le titre vers le bas */
 .modal-close{
-  position:absolute;top:6px;right:6px;width:44px;height:44px;border:none;background:none;
-  font-size:var(--fs-xl);color:var(--ink-soft);cursor:pointer;line-height:1;
+  position:sticky;top:0;z-index:1;display:flex;align-items:center;justify-content:center;
+  width:44px;height:44px;margin:-8px -6px -36px auto;border:none;border-radius:50%;
+  background:var(--card);font-size:var(--fs-xl);color:var(--ink-soft);cursor:pointer;line-height:1;
 }
 body.no-scroll{overflow:hidden}
 .trend{padding-top:6px}
@@ -407,7 +415,7 @@ nav button.active{color:var(--green)}
   <h1>🧲 FoodCheck</h1>
   <div class="head-right">
     <span class="week-label" id="weekLabel"></span>
-    <button class="info-btn" id="infoBtn" onclick="toggleInfo()" aria-label="Repères et recommandations" aria-pressed="false"><span class="i-dot">i</span></button>
+    <button class="info-btn" id="infoBtn" onclick="openInfo()" aria-label="Repères et recommandations"><span class="i-dot">i</span></button>
   </div>
 </header>
 
@@ -471,51 +479,7 @@ nav button.active{color:var(--green)}
         <div class="memo-row"><span class="m-icon">🍗</span><span class="m-name">Protéine</span><span>≈ 1 paume de main</span></div>
         <div class="memo-row"><span class="m-icon">🏃</span><span class="m-name">Bouger</span><span>30 min dynamique</span></div>
       </div>
-      <button class="see-all-link" onclick="toggleInfo()">Voir tous les repères →</button>
-    </section>
-  </div>
-
-  <!-- ================= VUE INFO / PNNS ================= -->
-  <div class="view" id="view-info">
-    <section class="card">
-      <h2>🥗 Repères PNNS</h2>
-      <p class="sub">Le Programme National Nutrition Santé, résumé simplement</p>
-      <div class="pnns-list">
-        <div class="pnns-row"><span class="pnns-em">🥕</span><div><b>Fruits & légumes</b><br>5 portions par jour minimum — au-delà, c'est encore bénéfique. Un légume à chaque repas si possible.</div></div>
-        <div class="pnns-row"><span class="pnns-em">🐟</span><div><b>Poisson</b><br>2 fois par semaine, dont 1 poisson gras (sardine, maquereau, saumon) pour les oméga-3 et la vitamine D.</div></div>
-        <div class="pnns-row"><span class="pnns-em">🥩</span><div><b>Viande</b><br>Viande rouge (bœuf, porc, agneau, veau) limitée à ~500 g/semaine au total · charcuterie ≤150 g/semaine. Volaille et œufs sans limite particulière.</div></div>
-        <div class="pnns-row"><span class="pnns-em">🥜</span><div><b>Légumineuses</b><br>Au moins 2 fois par semaine (lentilles, pois chiches, haricots…) — protéines végétales et fibres.</div></div>
-        <div class="pnns-row"><span class="pnns-em">🌱</span><div><b>Protéines végétales</b><br>Viser un équilibre proche de 50 % animal / 50 % végétal (en France on est plutôt à 65-70 % animal). Sources : tofu, tempeh, seitan, légumineuses. Astuce : associer une céréale et une légumineuse dans le même repas (riz + lentilles, semoule + pois chiches) donne des protéines aussi complètes que la viande. Dans l'app, une portion de légumineuses compte pour ½ protéine.</div></div>
-        <div class="pnns-row"><span class="pnns-em">🍚</span><div><b>Féculents</b><br>À chaque repas selon l'appétit, sans quantité minimale imposée. Privilégier les versions complètes pour les fibres.</div></div>
-        <div class="pnns-row"><span class="pnns-em">🥛</span><div><b>Produits laitiers</b><br>2 par jour (lait, yaourt ou fromage), à alterner.</div></div>
-        <div class="pnns-row"><span class="pnns-em">🌻</span><div><b>Matières grasses</b><br>Varier les sources, privilégier les huiles végétales (colza, olive, noix) plutôt que le beurre en excès.</div></div>
-        <div class="pnns-row"><span class="pnns-em">🍰</span><div><b>Sucre, sel & ultra-transformé</b><br>À limiter sans interdiction totale — le plaisir occasionnel a sa place.</div></div>
-        <div class="pnns-row"><span class="pnns-em">🍷</span><div><b>Alcool</b><br>Maximum 2 verres/jour, pas tous les jours, et pas plus de 10/semaine.</div></div>
-        <div class="pnns-row"><span class="pnns-em">🏃</span><div><b>Activité physique</b><br>30 minutes par jour d'activité dynamique, et limiter les temps assis prolongés.</div></div>
-        <div class="pnns-row"><span class="pnns-em">💪</span><div><b>Renforcement musculaire</b><br>2 séances par semaine, en plus de l'activité quotidienne (OMS). Exemple simple sans matériel : squats, pompes (ou sur les genoux), fentes, gainage — 3 séries de chaque, 15-20 min. Le bricolage ou jardinage intense (port de charges, efforts répétés) compte aussi.</div></div>
-      </div>
-    </section>
-
-    <section class="card">
-      <h2>📏 Repères de portion</h2>
-      <p class="sub">Pour un adulte, par prise</p>
-      <div class="memo">
-        <div class="memo-row"><span class="m-icon">🥕</span><span class="m-name">Légume</span><span>150 à 200 g</span></div>
-        <div class="memo-row"><span class="m-icon">🍎</span><span class="m-name">Fruit</span><span>80 à 100 g</span></div>
-        <div class="memo-row"><span class="m-icon">🥛</span><span class="m-name">Laitier</span><span>80–100 g de yaourt <b>ou</b> 20–30 g de fromage</span></div>
-        <div class="memo-row"><span class="m-icon">🍚</span><span class="m-name">Féculent</span><span>80–100 g cuit <b>ou</b> 40–50 g cru</span></div>
-        <div class="memo-row"><span class="m-icon">🍗</span><span class="m-name">Protéine</span><span>30 à 40 g (protéines pures) ≈ 100–150 g de viande/poisson, soit environ <b>une paume de main</b></span></div>
-        <div class="memo-row"><span class="m-icon">🌰</span><span class="m-name">Oléagineux</span><span>≈ 30 g, soit environ <b>une poignée</b></span></div>
-        <div class="memo-row"><span class="m-icon">🏃</span><span class="m-name">Bouger</span><span>30 min d'activité <b>dynamique</b> (souffle légèrement accéléré) : marche rapide, vélo, jardinage, ménage vigoureux, escaliers, sport… Fractionnable en 2–3 fois 10 min.</span></div>
-        <div class="memo-row"><span class="m-icon">🍷</span><span class="m-name">Alcool</span><span>1 joker = 1 verre standard (10 g) · max 2/jour, et pas tous les jours</span></div>
-      </div>
-    </section>
-
-    <section class="card">
-      <h2>Pour aller plus loin</h2>
-      <p class="sub">FoodCheck s'appuie sur les recommandations officielles françaises. Le détail complet :</p>
-      <a class="ext-link" href="https://www.mangerbouger.fr" target="_blank" rel="noopener">mangerbouger.fr ↗</a>
-      <a class="ext-link" href="https://www.santepubliquefrance.fr" target="_blank" rel="noopener">santepubliquefrance.fr ↗</a>
+      <button class="see-all-link" onclick="openInfo()">Voir tous les repères →</button>
     </section>
   </div>
 
@@ -640,6 +604,51 @@ nav button.active{color:var(--green)}
   <button data-view="settings" onclick="switchView('settings')"><span class="n-em">⚙️</span>Réglages</button>
 </nav>
 
+<div class="modal" id="infoModal" onclick="backdropClose(event)" aria-hidden="true">
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
+    <button class="modal-close" onclick="closeModal()" aria-label="Fermer">✕</button>
+    <section class="modal-sec">
+      <h2 id="infoTitle">🥗 Repères PNNS</h2>
+      <p class="sub">Le Programme National Nutrition Santé, résumé simplement</p>
+      <div class="pnns-list">
+        <div class="pnns-row"><span class="pnns-em">🥕</span><div><b>Fruits & légumes</b><br>5 portions par jour minimum — au-delà, c'est encore bénéfique. Un légume à chaque repas si possible.</div></div>
+        <div class="pnns-row"><span class="pnns-em">🐟</span><div><b>Poisson</b><br>2 fois par semaine, dont 1 poisson gras (sardine, maquereau, saumon) pour les oméga-3 et la vitamine D.</div></div>
+        <div class="pnns-row"><span class="pnns-em">🥩</span><div><b>Viande</b><br>Viande rouge (bœuf, porc, agneau, veau) limitée à ~500 g/semaine au total · charcuterie ≤150 g/semaine. Volaille et œufs sans limite particulière.</div></div>
+        <div class="pnns-row"><span class="pnns-em">🥜</span><div><b>Légumineuses</b><br>Au moins 2 fois par semaine (lentilles, pois chiches, haricots…) — protéines végétales et fibres.</div></div>
+        <div class="pnns-row"><span class="pnns-em">🌱</span><div><b>Protéines végétales</b><br>Viser un équilibre proche de 50 % animal / 50 % végétal (en France on est plutôt à 65-70 % animal). Sources : tofu, tempeh, seitan, légumineuses. Astuce : associer une céréale et une légumineuse dans le même repas (riz + lentilles, semoule + pois chiches) donne des protéines aussi complètes que la viande. Dans l'app, une portion de légumineuses compte pour ½ protéine.</div></div>
+        <div class="pnns-row"><span class="pnns-em">🍚</span><div><b>Féculents</b><br>À chaque repas selon l'appétit, sans quantité minimale imposée. Privilégier les versions complètes pour les fibres.</div></div>
+        <div class="pnns-row"><span class="pnns-em">🥛</span><div><b>Produits laitiers</b><br>2 par jour (lait, yaourt ou fromage), à alterner.</div></div>
+        <div class="pnns-row"><span class="pnns-em">🌻</span><div><b>Matières grasses</b><br>Varier les sources, privilégier les huiles végétales (colza, olive, noix) plutôt que le beurre en excès.</div></div>
+        <div class="pnns-row"><span class="pnns-em">🍰</span><div><b>Sucre, sel & ultra-transformé</b><br>À limiter sans interdiction totale — le plaisir occasionnel a sa place.</div></div>
+        <div class="pnns-row"><span class="pnns-em">🍷</span><div><b>Alcool</b><br>Maximum 2 verres/jour, pas tous les jours, et pas plus de 10/semaine.</div></div>
+        <div class="pnns-row"><span class="pnns-em">🏃</span><div><b>Activité physique</b><br>30 minutes par jour d'activité dynamique, et limiter les temps assis prolongés.</div></div>
+        <div class="pnns-row"><span class="pnns-em">💪</span><div><b>Renforcement musculaire</b><br>2 séances par semaine, en plus de l'activité quotidienne (OMS). Exemple simple sans matériel : squats, pompes (ou sur les genoux), fentes, gainage — 3 séries de chaque, 15-20 min. Le bricolage ou jardinage intense (port de charges, efforts répétés) compte aussi.</div></div>
+      </div>
+    </section>
+
+    <section class="modal-sec">
+      <h2>📏 Repères de portion</h2>
+      <p class="sub">Pour un adulte, par prise</p>
+      <div class="memo">
+        <div class="memo-row"><span class="m-icon">🥕</span><span class="m-name">Légume</span><span>150 à 200 g</span></div>
+        <div class="memo-row"><span class="m-icon">🍎</span><span class="m-name">Fruit</span><span>80 à 100 g</span></div>
+        <div class="memo-row"><span class="m-icon">🥛</span><span class="m-name">Laitier</span><span>80–100 g de yaourt <b>ou</b> 20–30 g de fromage</span></div>
+        <div class="memo-row"><span class="m-icon">🍚</span><span class="m-name">Féculent</span><span>80–100 g cuit <b>ou</b> 40–50 g cru</span></div>
+        <div class="memo-row"><span class="m-icon">🍗</span><span class="m-name">Protéine</span><span>30 à 40 g (protéines pures) ≈ 100–150 g de viande/poisson, soit environ <b>une paume de main</b></span></div>
+        <div class="memo-row"><span class="m-icon">🌰</span><span class="m-name">Oléagineux</span><span>≈ 30 g, soit environ <b>une poignée</b></span></div>
+        <div class="memo-row"><span class="m-icon">🏃</span><span class="m-name">Bouger</span><span>30 min d'activité <b>dynamique</b> (souffle légèrement accéléré) : marche rapide, vélo, jardinage, ménage vigoureux, escaliers, sport… Fractionnable en 2–3 fois 10 min.</span></div>
+        <div class="memo-row"><span class="m-icon">🍷</span><span class="m-name">Alcool</span><span>1 joker = 1 verre standard (10 g) · max 2/jour, et pas tous les jours</span></div>
+      </div>
+    </section>
+
+    <section class="modal-sec">
+      <h2>Pour aller plus loin</h2>
+      <p class="sub">FoodCheck s'appuie sur les recommandations officielles françaises. Le détail complet :</p>
+      <a class="ext-link" href="https://www.mangerbouger.fr" target="_blank" rel="noopener">mangerbouger.fr ↗</a>
+      <a class="ext-link" href="https://www.santepubliquefrance.fr" target="_blank" rel="noopener">santepubliquefrance.fr ↗</a>
+    </section>
+  </div>
+</div>
 <div class="modal" id="missingModal" onclick="backdropClose(event)" aria-hidden="true">
   <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="missingTitle">
     <button class="modal-close" onclick="closeModal()" aria-label="Fermer">✕</button>
@@ -1328,14 +1337,16 @@ function closeModal(){
 }
 function backdropClose(e){ if (e.target === e.currentTarget) closeModal(); }
 function openTrend(){ trendOpen = true; renderTrend(); showModal("trendModal"); }
+/* Repères PNNS : pop-up par-dessus la vue courante (rien à restaurer à la fermeture) */
+function openInfo(){
+  showModal("infoModal");
+  document.querySelector("#infoModal .modal-card").scrollTop = 0;
+}
 function openMissing(){ renderMissing(); showModal("missingModal"); }
-/* Bouton retour d'Android : referme la pop-up ou les Repères au lieu de quitter l'app */
-let skipPop = false;
+/* Bouton retour d'Android : referme la pop-up ouverte au lieu de quitter l'app */
 if ("scrollRestoration" in history) history.scrollRestoration = "manual"; // c'est l'app qui replace le défilement
 window.addEventListener("popstate", () => {
-  if (skipPop){ skipPop = false; return; }
   if (openModalId) hideModal();
-  else if (infoActive()) leaveInfo();
 });
 document.addEventListener("keydown", e => { if (e.key === "Escape" && openModalId) closeModal(); });
 const DAILY_MISSING = {veg:["🥕","Légumes"], fruit:["🍎","Fruits"], dairy:["🥛","Produits laitiers"],
@@ -1561,32 +1572,10 @@ function resetWeek(){
   save(); renderAll(); toast("Semaine réinitialisée");
 }
 function switchView(v){
-  if (v !== "info" && infoActive() && history.state && history.state.info){ skipPop = true; history.back(); }
   document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));
   document.getElementById("view-"+v).classList.add("active");
   document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active", b.dataset.view===v));
-  const ib = document.getElementById("infoBtn");
-  ib.setAttribute("aria-pressed", v === "info");
   if (v === "week") scrollToToday(); else window.scrollTo({top:0});
-}
-/* ℹ️ ouvre les Repères ; un nouvel appui ramène à la vue et à la position d'avant */
-let infoReturn = null;
-const infoActive = () => document.getElementById("view-info").classList.contains("active");
-function leaveInfo(){
-  const r = infoReturn || {view:"week", y:null};
-  switchView(r.view);
-  if (r.y !== null) window.scrollTo({top: r.y});
-}
-function toggleInfo(){
-  if (infoActive()){
-    // passe par l'historique du navigateur : même chemin que le bouton retour d'Android
-    if (history.state && history.state.info) history.back(); else leaveInfo();
-  } else {
-    const cur = document.querySelector(".view.active").id.replace("view-","");
-    infoReturn = {view: cur, y: window.scrollY};
-    switchView("info");
-    history.pushState({info: true}, "");
-  }
 }
 /* Centre le jour courant dans la zone visible (au-dessus de la barre d'onglets) :
    on voit la veille au-dessus et le lendemain en dessous */

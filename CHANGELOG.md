@@ -6,6 +6,12 @@ Les choix écartés sont notés en bas, pour ne pas les rediscuter.
 
 ---
 
+## v39 — 2026-11-02 · Repères en pop-up
+- Les Repères (PNNS, portions, liens officiels) s'ouvrent en **pop-up**, comme Évolution et Ce qu'il manque, au lieu d'une vue à part. On les ouvre avec le « i » de l'en-tête ou « Voir tous les repères », et on les ferme avec ✕, en touchant le fond, avec le retour Android ou Échap.
+- La vue reste dessous : plus de changement de vue ni de position à restaurer. La vue `view-info` et sa logique de bascule (`toggleInfo`, `leaveInfo`, `skipPop`) sont supprimées.
+- `validate.mjs --render` ouvre et referme les trois pop-ups et vérifie qu'elles ne débordent pas.
+- Préservé : données, calculs, contenu des Repères inchangé.
+
 ## v38 — 2026-10-31 · 🧺 à la suite du titre
 - Le bouton 🧺 passe de la droite de la carte à un **petit bouton cadré juste après « Quêtes de la semaine »** (30×28 px, zone tactile élargie à ~46 px). Choix issu d'une critique design :
   - à droite, il se disputait la place avec la pastille 1/13 et cassait la structure d'en-tête commune aux cartes de la vue Semaine ;
