@@ -220,6 +220,17 @@ if (T) {
     for (const g of Object.keys(GROUPS)) for (const it of DEFAULT_CONFIG[g])
       assert.ok(s.config[g].some(x => x.id === it.id), `${g}.${it.id} absent après migration`);
   });
+  check("migration v40 : « Légume vert feuillu » renommé, pastilles et nom perso intacts", () => {
+    const [c, w] = fresh();
+    c.micro.find(it => it.id === "feuillu").name = "Légume vert feuillu";
+    w.pools.micro.feuillu = [true, false, true];
+    const s1 = migrate({ config: c, week: w, history: [] });
+    assert.equal(s1.config.micro.find(it => it.id === "feuillu").name, DEFAULT_CONFIG.micro.find(it => it.id === "feuillu").name);
+    assert.deepEqual([...s1.week.pools.micro.feuillu], [true, false, true]);
+    const [c2, w2] = fresh();
+    c2.micro.find(it => it.id === "feuillu").name = "Mes légumes verts";
+    assert.equal(migrate({ config: c2, week: w2, history: [] }).config.micro.find(it => it.id === "feuillu").name, "Mes légumes verts");
+  });
   check("migration : ancien format compteurs (v2)", () => {
     const s = migrate({ config: {
         proteins: [{ id: "poulet", name: "Poulet", emoji: "🍗", count: 4 }, { id: "poisson", name: "Poisson", emoji: "🐟", count: 3 }],
