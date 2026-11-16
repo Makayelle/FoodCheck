@@ -77,6 +77,14 @@ main{padding:0 12px}
 .pnns-row{display:flex;gap:10px;align-items:flex-start}
 .pnns-em{font-size:var(--fs-xl);flex:none;width:30px;text-align:center;line-height:1.3}
 .pnns-row div{font-size:var(--fs-md);line-height:1.5;color:var(--ink-soft)}
+/* section repliable (bonus) dans une pop-up : même chevron que les semaines de l'Historique */
+.fold > summary{
+  list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:44px;
+}
+.fold > summary::-webkit-details-marker{display:none}
+.fold > summary .sub{display:block;margin-bottom:0}
+.fold[open] > summary{margin-bottom:10px}
+.fold[open] .fold-chev{transform:rotate(180deg)}
 .pnns-for{font-weight:700;color:var(--green);font-size:var(--fs-sm)}
 .pnns-row b{color:var(--ink);font-family:'Fredoka',sans-serif;font-weight:500}
 .ext-link{
@@ -628,21 +636,6 @@ nav button.active{color:var(--green)}
     </section>
 
     <section class="modal-sec">
-      <h2>🌿 Variété micro : ce qui compte</h2>
-      <p class="sub">Une pastille = une portion de l'un de ces aliments</p>
-      <div class="pnns-list">
-        <div class="pnns-row"><span class="pnns-em">🌰</span><div><b>Noix / lin / chia / chanvre</b><br>Noix, graines de lin, chia ou chanvre · 1 poignée de noix ou 1 c. à soupe de graines<br><span class="pnns-for">→ Oméga-3 · Magnésium · Vit. E</span></div></div>
-        <div class="pnns-row"><span class="pnns-em">🥥</span><div><b>Autres oléagineux</b><br>Amandes, noisettes, cajou, pistaches · 1 poignée (≈ 30 g)<br><span class="pnns-for">→ Magnésium · Vit. E</span></div></div>
-        <div class="pnns-row"><span class="pnns-em">🌻</span><div><b>Huile colza / noix</b><br>En vinaigrette ou cuisson douce · 1 c. à soupe<br><span class="pnns-for">→ Oméga-3 · Vit. E</span></div></div>
-        <div class="pnns-row"><span class="pnns-em">🥑</span><div><b>Huile d'olive / avocat</b><br>1 c. à soupe d'huile ou ½ avocat<br><span class="pnns-for">→ Variété des bonnes graisses, sans quête associée (pas d'oméga-3)</span></div></div>
-        <div class="pnns-row"><span class="pnns-em">🥬</span><div><b>Légume vert foncé</b><br>Épinards, salades (mâche, roquette), brocoli, choux, blettes, cresson · 1 portion<br><span class="pnns-for">→ Folates · Fer · Calcium</span></div></div>
-        <div class="pnns-row"><span class="pnns-em">🍅</span><div><b>Légume / fruit très coloré</b><br>Carotte, potiron, patate douce, poivron rouge, tomate, mangue, abricot, melon · 1 portion<br><span class="pnns-for">→ Vit. A</span></div></div>
-        <div class="pnns-row"><span class="pnns-em">🍊</span><div><b>Agrume ou kiwi</b><br>Orange, pamplemousse, 2 clémentines ou mandarines, 1–2 kiwis<br><span class="pnns-for">→ Vit. C</span></div></div>
-        <div class="pnns-row"><span class="pnns-em">🌾</span><div><b>Féculent version complète</b><br>Pain, riz ou pâtes complets, boulgour, quinoa · 1 portion<br><span class="pnns-for">→ Fibres · Magnésium</span></div></div>
-      </div>
-    </section>
-
-    <section class="modal-sec">
       <h2>📏 Repères de portion</h2>
       <p class="sub">Pour un adulte, par prise</p>
       <div class="memo">
@@ -655,6 +648,25 @@ nav button.active{color:var(--green)}
         <div class="memo-row"><span class="m-icon">🏃</span><span class="m-name">Bouger</span><span>30 min d'activité <b>dynamique</b> (souffle légèrement accéléré) : marche rapide, vélo, jardinage, ménage vigoureux, escaliers, sport… Fractionnable en 2–3 fois 10 min.</span></div>
         <div class="memo-row"><span class="m-icon">🍷</span><span class="m-name">Alcool</span><span>1 joker = 1 verre standard (10 g) · max 2/jour, et pas tous les jours</span></div>
       </div>
+    </section>
+
+    <section class="modal-sec">
+      <details class="fold">
+        <summary>
+          <span><h2>🌿 Variété micro : ce qui compte</h2><span class="sub">Bonus · exemples et portion pour chaque pastille</span></span>
+          <span class="hist-chevron fold-chev">⌄</span>
+        </summary>
+      <div class="pnns-list">
+        <div class="pnns-row"><span class="pnns-em">🌰</span><div><b>Noix / lin / chia / chanvre</b><br>Noix, graines de lin, chia ou chanvre · 1 poignée de noix ou 1 c. à soupe de graines<br><span class="pnns-for">→ Oméga-3 · Magnésium · Vit. E</span></div></div>
+        <div class="pnns-row"><span class="pnns-em">🥥</span><div><b>Autres oléagineux</b><br>Amandes, noisettes, cajou, pistaches · 1 poignée (≈ 30 g)<br><span class="pnns-for">→ Magnésium · Vit. E</span></div></div>
+        <div class="pnns-row"><span class="pnns-em">🌻</span><div><b>Huile colza / noix</b><br>En vinaigrette ou cuisson douce · 1 c. à soupe<br><span class="pnns-for">→ Oméga-3 · Vit. E</span></div></div>
+        <div class="pnns-row"><span class="pnns-em">🥑</span><div><b>Huile d'olive / avocat</b><br>1 c. à soupe d'huile ou ½ avocat<br><span class="pnns-for">→ Variété des bonnes graisses, sans quête associée (pas d'oméga-3)</span></div></div>
+        <div class="pnns-row"><span class="pnns-em">🥬</span><div><b>Légume vert foncé</b><br>Épinards, salades vert foncé (mâche, roquette, romaine, cresson), brocoli, choux, blettes · 1 portion. Laitue ou iceberg en accompagnement : à cocher en 🥕 légume du jour<br><span class="pnns-for">→ Folates · Fer · Calcium</span></div></div>
+        <div class="pnns-row"><span class="pnns-em">🍅</span><div><b>Légume / fruit très coloré</b><br>Carotte, potiron, patate douce, poivron rouge, tomate, mangue, abricot, melon · 1 portion<br><span class="pnns-for">→ Vit. A</span></div></div>
+        <div class="pnns-row"><span class="pnns-em">🍊</span><div><b>Agrume ou kiwi</b><br>Orange, pamplemousse, 2 clémentines ou mandarines, 1–2 kiwis<br><span class="pnns-for">→ Vit. C</span></div></div>
+        <div class="pnns-row"><span class="pnns-em">🌾</span><div><b>Féculent version complète</b><br>Pain, riz ou pâtes complets, boulgour, quinoa · 1 portion<br><span class="pnns-for">→ Fibres · Magnésium</span></div></div>
+      </div>
+      </details>
     </section>
 
     <section class="modal-sec">
@@ -1359,6 +1371,7 @@ function backdropClose(e){ if (e.target === e.currentTarget) closeModal(); }
 function openTrend(){ trendOpen = true; renderTrend(); showModal("trendModal"); }
 /* Repères PNNS : pop-up par-dessus la vue courante (rien à restaurer à la fermeture) */
 function openInfo(){
+  document.querySelectorAll("#infoModal details.fold").forEach(d => d.open = false); // bonus replié à chaque ouverture
   showModal("infoModal");
   document.querySelector("#infoModal .modal-card").scrollTop = 0;
 }

@@ -46,7 +46,7 @@ Seule ressource externe : Google Fonts (Fredoka, Nunito), mise en cache par le s
 | `view-week` | onglet Semaine (s'ouvre avec **aujourd'hui centré** à l'écran, `scrollToToday()`) | Quêtes (petit bouton `.title-btn` 🧺 à la suite du titre → pop-up « Ce qu'il manque », `missingForQuests()` : reste dû par aliment, trié par nombre de quêtes servies), Chaque jour (grille 2×4 + check-in ⚡😊), Renforcement, Féculents, Protéines, Variété micro, Jokers, teaser "Repères rapides" |
 | `view-history` | onglet Historique | Bouton 📈 à droite du titre → pop-up « Évolution » (`openTrend()` ; pop-ups génériques `showModal()`/`closeModal()`, fond assombri, fermeture ✕ / fond / retour Android ; `renderTrend()` : courbe 12 semaines, métrique au choix, ressenti ⚡😊 superposable + corrélation, jokers en barres neutres), puis une carte par semaine archivée, repliable ; la plus récente dépliée au démarrage |
 | `view-settings` | onglet Réglages | Chaque carte : titre court + sous-titre (« Objectif / Budget de la semaine : … ») ; ligne cible 🎯 alignée sur les lignes d'aliments (`.del-spacer`). Sections **dans le même ordre que la vue Semaine** : Renforcement, Féculents, Protéines, Variété micro, Jokers, puis Quantités recommandées, puis Semaine en cours |
-| pop-up `infoModal` (pas une vue) | « i » cerclé de l'en-tête ou « Voir tous les repères » → `openInfo()` ; fermeture ✕ / fond / retour Android / Échap comme les autres pop-ups | Repères PNNS/OMS, « 🌿 Variété micro : ce qui compte » (exemples, portion, quêtes servies par pastille), repères de portion, liens mangerbouger.fr / santepubliquefrance.fr |
+| pop-up `infoModal` (pas une vue) | « i » cerclé de l'en-tête ou « Voir tous les repères » → `openInfo()` ; fermeture ✕ / fond / retour Android / Échap comme les autres pop-ups | Repères PNNS/OMS, repères de portion, « 🌿 Variété micro : ce qui compte » **repliée par défaut** (`<details class="fold">`, exemples, portion, quêtes servies par pastille), liens mangerbouger.fr / santepubliquefrance.fr |
 
 ## Modèle de données
 
@@ -100,14 +100,14 @@ Choix nutritionnels assumés à ne pas défaire :
 - B12 : la protéine végétale n'y contribue pas.
 - Vit. C : tous les fruits du quotidien comptent pareil (approximation acceptée).
 - Avoine : source directe de Fibres et Magnésium (pas besoin de cocher "complet" en plus).
-- `feuillu` = « Légume vert foncé » : brocoli et choux inclus (folates). Agrumes : 2 clémentines = 1 pastille.
+- `feuillu` = « Légume vert foncé » : brocoli, choux et salades vert foncé (mâche, roquette, romaine, cresson) inclus (folates) ; laitue/iceberg d'accompagnement = légume du jour. Agrumes : 2 clémentines = 1 pastille.
 - `huileolive` n'alimente **aucune quête** (pas d'oméga-3) : pastille de variété uniquement.
 
 ## Règles de développement
 
 1. **Les ids sont éternels.** Ne jamais renommer un `id` d'aliment, de groupe ou de quête : il indexe les données de l'utilisateur. Pour changer un libellé, modifier `name` (et `SHORT_NAMES` pour l'affichage en carte).
 2. **Toute évolution de structure passe par `migrate(s)`.** Les étapes doivent être idempotentes, commentées avec la version (`// v27 → v28 : …`), et **préserver les pastilles déjà cochées** (redimensionner les tableaux en tronquant/complétant, ne jamais les recréer vides). Une nouvelle entrée par défaut doit aussi être ajoutée à `DEFAULT_CONFIG` et à `SHORT_NAMES`.
-3. **Bumper `CACHE` dans `sw.js` à chaque déploiement** (`nutri-suivi-vN`, actuellement v40). Sans ça, la PWA installée continue de servir l'ancienne version hors-ligne. **Ajouter l'entrée correspondante en tête de `CHANGELOG.md`** (quoi, pourquoi, ce qui est préservé) ; noter aussi les idées écartées dans « Décisions écartées ».
+3. **Bumper `CACHE` dans `sw.js` à chaque déploiement** (`nutri-suivi-vN`, actuellement v41). Sans ça, la PWA installée continue de servir l'ancienne version hors-ligne. **Ajouter l'entrée correspondante en tête de `CHANGELOG.md`** (quoi, pourquoi, ce qui est préservé) ; noter aussi les idées écartées dans « Décisions écartées ».
 4. **Dates en local.** Utiliser `weekKey()` / `isoLocal()`, jamais `toISOString()` : en France, lundi 00:00 = dimanche 22:00 UTC.
 5. **Échapper tout texte saisi** par l'utilisateur avec `esc()` avant de l'injecter en HTML.
 6. **Emojis** : éviter les emojis Unicode 13+ (🫒 🫘 …), mal affichés sur certains appareils. Pas de doublon d'emoji dans un même pool.
