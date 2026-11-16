@@ -6,6 +6,13 @@ Les choix écartés sont notés en bas, pour ne pas les rediscuter.
 
 ---
 
+## v40 — 2026-11-16 · Variété micro : ce qui compte
+- Nouvelle section **« 🌿 Variété micro : ce qui compte »** dans les Repères : pour chaque pastille, des exemples d'aliments, la portion et les quêtes qu'elle fait avancer. Les catégories bonus étaient les moins évidentes à cocher.
+- « Légume vert feuillu » devient **« Légume vert foncé (épinards, brocoli, chou…) »** : le brocoli et les choux, riches en folates, y ont leur place. Migration v39 → v40 : seul le libellé change, et seulement s'il n'a pas été personnalisé ; l'id `feuillu` et les pastilles cochées restent.
+- Précisé : 2 clémentines ou mandarines = 1 pastille « Agrume ou kiwi ».
+- Astuce des Réglages corrigée : elle laissait croire que l'huile d'olive compte pour une quête. Elle sert à la variété des bonnes graisses, sans quête associée.
+- Préservé : données, calculs.
+
 ## v39 — 2026-11-02 · Repères en pop-up
 - Les Repères (PNNS, portions, liens officiels) s'ouvrent en **pop-up**, comme Évolution et Ce qu'il manque, au lieu d'une vue à part. On les ouvre avec le « i » de l'en-tête ou « Voir tous les repères », et on les ferme avec ✕, en touchant le fond, avec le retour Android ou Échap.
 - La vue reste dessous : plus de changement de vue ni de position à restaurer. La vue `view-info` et sa logique de bascule (`toggleInfo`, `leaveInfo`, `skipPop`) sont supprimées.
